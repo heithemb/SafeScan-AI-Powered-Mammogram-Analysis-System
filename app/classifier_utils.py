@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 def load_classifier():
     print('Loading classifier model...')
-    classifier = joblib.load(r"C:\Users\mezni\Downloads\wetransfer_maskrcnn-convnext_bestmap-pth_2025-04-14_1454\svm+lgbmdensenet+convnexttiny+9720+c=6+k=sigmoid+augmentation.pkl")
+    classifier = joblib.load(r"models\svm+lgbmdensenet+convnexttiny+9720+c=6+k=sigmoid+augmentation.pkl")
     return classifier
 def smart_crop_from_box(orig_cv, box, target_size=224):
     import cv2
@@ -105,7 +105,7 @@ def classify(image_path, results, classifier):
             # Convert BGR (OpenCV) to RGB for matplotlib
             cropped_rgb = cv2.cvtColor(cropped_img, cv2.COLOR_BGR2RGB)
             X = extract_deep_features(cropped_rgb)
-            scaler = joblib.load(r"C:\Users\mezni\Downloads\wetransfer_maskrcnn-convnext_bestmap-pth_2025-04-14_1454\scaler.joblib")
+            scaler = joblib.load(r"models\scaler.joblib")
             X=scaler.transform(X)
             y = classifier.predict(X)[0]
             print(y)

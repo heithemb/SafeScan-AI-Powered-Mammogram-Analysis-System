@@ -46,7 +46,7 @@ def load_model(device: str = "cuda"):
         max_size=1333
     )
 
-    model.load_state_dict(torch.load(r"C:\Users\mezni\Downloads\wetransfer_maskrcnn-convnext_bestmap-pth_2025-04-14_1454\MaskRcnn+convnext_bestMap.pth", map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
+    model.load_state_dict(torch.load(r"models\MaskRcnn+convnext_bestMap.pth", map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return model.to(device)
 

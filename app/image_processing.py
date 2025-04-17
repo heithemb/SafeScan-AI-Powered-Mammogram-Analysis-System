@@ -7,47 +7,47 @@ import io
 CUSTOM_CLASSES = ['calc', 'mass']
 
 def process_predictions(image_path: str, predictions: dict, confidence_threshold=0.5):
-    """
-    Visualize predictions (boxes, masks, labels) on an image from a file path.
+    try:
+        """
+        Visualize predictions (boxes, masks, labels) on an image from a file path.
 
-    Args:
+        Args:
         image_path (str): Path to the image file.
         predictions (dict): Dict with 'boxes', 'labels', 'scores', and 'masks' from the model.
         confidence_threshold (float): Confidence threshold for filtering predictions.
 
-    Returns:
-        np.ndarray: Annotated prediction image in RGB format.
-    """
-    # Load and convert image to numpy array
-    img = Image.open(image_path).convert("RGB")
-    image_np = np.array(img)
+        Returns:
+            np.ndarray: Annotated prediction image in RGB format.
+        """
+        # Load and convert image to numpy array
+        img = Image.open(image_path).convert("RGB")
+        image_np = np.array(img)
 
-    if image_np.max() <= 1:
-        image_np = (image_np * 255).astype(np.uint8)
+        if image_np.max() <= 1:
+            image_np = (image_np * 255).astype(np.uint8)
 
-    pred_image = image_np.copy()
-
-    # Convert tensors to numpy and filter by confidence
-    boxes = torch.tensor(predictions['boxes'])
-    labels = torch.tensor(predictions['labels'])
-    scores = torch.tensor(predictions['scores'])
-    masks = torch.tensor(predictions['masks'])
-    classif = predictions['classification']  # Get classification results
-
-
-
-    high_conf = scores > confidence_threshold
-    boxes = boxes[high_conf].numpy()
-    labels = labels[high_conf].numpy()
-    scores = scores[high_conf].numpy()
-    masks = masks[high_conf].numpy()
-    classif = np.array(classif)[high_conf]  # Filter by confidence for classif
-
+        pred_image = image_np.copy()
+        # Convert tensors to numpy and filter by confidence
+        boxes = torch.tensor(predictions['boxes'])
+        labels = torch.tensor(predictions['labels'])
+        scores = torch.tensor(predictions['scores'])
+        masks = torch.tensor(predictions['masks'])
+        classif = predictions['classification']  # Get classification results
+        high_conf = scores > confidence_threshold
+        boxes = boxes[high_conf].numpy()
+        
+        labels = labels[high_conf].numpy()
+        scores = scores[high_conf].numpy()
+        masks = masks[high_conf].numpy()
+        high_conf = high_conf.cpu().numpy()  # Convert tensor to numpy array
+        classif = [cls for cls, mask in zip(classif, high_conf) if mask]# Filter by confidence for classif
+    except Exception as e:
+        print(f"Error: {e}")
+        raise
 
 
     for i, (box, label, class_result) in enumerate(zip(boxes, labels, classif)):
         xmin, ymin, xmax, ymax = map(int, box)
-
         # Draw bounding box
         cv2.rectangle(pred_image, (xmin, ymin), (xmax, ymax), (147, 20, 255) , 2)
 
@@ -76,4 +76,5 @@ def process_predictions(image_path: str, predictions: dict, confidence_threshold
     image_stream = io.BytesIO(buffer)
     image_stream.seek(0)  # Don't forget this
     return image_stream
+
 
