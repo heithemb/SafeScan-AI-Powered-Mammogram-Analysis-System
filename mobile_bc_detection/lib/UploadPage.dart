@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'Controller.dart';
-import 'ResultsPage.dart';  // add this at the top
+import 'ResultsPage.dart';
 
 class UploadHome extends StatefulWidget {
   @override
@@ -111,38 +111,39 @@ class _UploadHomeState extends State<UploadHome> {
                   ),
                 ),
               ),
-              SizedBox(height: 40),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF9C2F4A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              if (_selectedImageBytes != null) ...[
+                SizedBox(height: 40),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF9C2F4A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 60, vertical: 16),
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 60, vertical: 16),
+                  onPressed: () async {
+                    Uint8List? resultImageBytes =
+                    await Controller.uploadImage(_selectedImageBytes!);
+                    if (resultImageBytes != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ResultsPage(imageBytes: resultImageBytes),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Upload failed ❌')),
+                      );
+                    }
+                  },
+                  child: Text(
+                    'Send',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
                 ),
-                onPressed: _selectedImageBytes == null
-                    ? null
-                    : () async {
-                  Uint8List? resultImageBytes = await Controller.uploadImage(_selectedImageBytes!);
-                  if (resultImageBytes != null) {
-                    // Navigate to ResultsPage and pass the image bytes
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ResultsPage(imageBytes: resultImageBytes),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Upload failed ❌')),
-                    );
-                  }
-                },
-                child: Text(
-                  'Send',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
+                SizedBox(height: 20),
+              ],
               Spacer(),
             ],
           ),
