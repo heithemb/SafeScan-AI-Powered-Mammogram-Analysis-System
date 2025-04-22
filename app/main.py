@@ -1,4 +1,6 @@
 #uvicorn main:app --reload
+import base64
+import io
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 ALLOWED_EXTENSIONS = {".dcm", ".png", ".jpg", ".jpeg"}  # Define allowed file types
+def convert_image_to_base64(image_stream: io.BytesIO) -> str:
+            image_stream.seek(0)
+            return base64.b64encode(image_stream.read()).decode('utf-8')
 
 @app.post("/predict")
 async def predict_api(file: UploadFile = File(...)):
@@ -51,6 +56,8 @@ async def predict_api(file: UploadFile = File(...)):
             # Use async file write with `file.read` to handle the content correctly
             content = await file.read()
             f.write(content)
+            original_image_stream = io.BytesIO(content)  # Save stream for base64
+
         
         # Processing logic
         if file_ext == ".dcm":
@@ -67,13 +74,13 @@ async def predict_api(file: UploadFile = File(...)):
             #classify(image_path,results,classifer)
             results = classify(image_path,results,classifer)
             # Process image and return the result
-            image_stream = process_predictions(image_path, results)
-            return StreamingResponse(image_stream, media_type="image/png")
+            response_data = process_predictions(image_path, results)
+            return JSONResponse(content=response_data)
     
         return{
                 "status": "success",
                 "detections": False,
-                "message": "No abnormalities detected",
+                "full_image": convert_image_to_base64(original_image_stream),
             }        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

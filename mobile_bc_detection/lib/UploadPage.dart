@@ -118,7 +118,7 @@ class _UploadHomeState extends State<UploadHome> {
                 SizedBox(height: 40),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromARGB(169, 0, 0, 0),
+                    backgroundColor: Color.fromARGB(121, 0, 0, 0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -127,28 +127,29 @@ class _UploadHomeState extends State<UploadHome> {
                   onPressed: () async {
   setState(() { _isLoading = true; });
 
-  Uint8List? resultImageBytes = await Controller.uploadImage(_selectedImageBytes!);
+  Map<String, dynamic>? result = await Controller.uploadImage(_selectedImageBytes!);
   
-  if (resultImageBytes != null) {
+  if (result != null) {
     // Has detections - show processed image
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultsPage(
           originalImageBytes: _selectedImageBytes!,
-          imageBytes: resultImageBytes,
+
+          result: result,
           hasDetections: true,
         ),
       ),
     );
-  } else if (resultImageBytes == null && _selectedImageBytes != null) {
+  } else if (result == null &&  _selectedImageBytes != null) {
     // No detections - show original image
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultsPage(
           originalImageBytes: _selectedImageBytes!,
-          imageBytes: _selectedImageBytes!,
+          result: {},
           hasDetections: false,
         ),
       ),

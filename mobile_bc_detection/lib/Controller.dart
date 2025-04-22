@@ -1,15 +1,15 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:http/http.dart';
-import 'dart:convert'; // For JSON decoding
 
 class Controller {
-  static Future<Uint8List?> uploadImage(Uint8List imageBytes) async {
+  static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes) async {
     final uri = Uri.parse('http://localhost:8000/predict');
 
     var request = MultipartRequest('POST', uri)
       ..files.add(
         MultipartFile.fromBytes(
-          'file', // field name expected by the API
+          'file',
           imageBytes,
           filename: 'mammogram.png',
         ),
@@ -17,21 +17,28 @@ class Controller {
 
     try {
       var response = await request.send();
-      var responseBytes = await response.stream.toBytes();
-
+      var responseString = await response.stream.bytesToString();
       if (response.statusCode == 200) {
-        // Check if the response is JSON (no detections case)
-        try {
-          var jsonResponse = json.decode(utf8.decode(responseBytes));
-          if (jsonResponse is Map && jsonResponse['detections'] == false) {
-            // No detections - return null to indicate we should use original image
-            return null;
-          }
-        } catch (e) {
-          // If JSON parsing fails, it's probably an image - return the bytes
-          return responseBytes;
+        var jsonResponse = json.decode(responseString);
+        
+        // Handle case where no detections were found
+        if (jsonResponse is Map && jsonResponse['detections'] == false) {
+
+          return null;
         }
-        return responseBytes;
+
+        // Process the full response
+        return {
+          'detections': true,
+          'full_image': base64Decode(jsonResponse['full_image']),
+          'individual_predictions': (jsonResponse['individual_predictions'] as List)
+              .map((pred) => {
+                    'image': base64Decode(pred['image']),
+                    'features': pred['features'],
+                  })
+              .toList()
+        };
+        
       } else {
         print('❌ Upload failed with status: ${response.statusCode}');
         return null;
