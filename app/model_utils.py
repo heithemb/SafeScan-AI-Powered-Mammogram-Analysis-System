@@ -119,16 +119,21 @@ def predict(image_path: str, model, device: str = "cuda"):
                 pred_masks, pred_labels, pred_scores, iou_threshold=0.0
             )
         
+        if (len(merged_boxes)>0):
+        # Format results
+            return {
+                "boxes": merged_boxes.tolist(),
+                "labels": merged_labels.tolist(),
+                "scores": merged_scores.tolist(),
+                "masks": merged_masks.tolist(),
+            }
+        return { "boxes":[],
+                "labels": [],
+                "scores": [],
+                "masks": []}
     except Exception as e:
-        print(f"Error during merging masks: {e}")
-        raise
-    # Format results
-    return {
-        "boxes": merged_boxes.tolist(),
-        "labels": merged_labels.tolist(),
-        "scores": merged_scores.tolist(),
-        "masks": merged_masks.tolist(),
-    }
+            print(f"Error during merging masks: {e}")
+            raise
     """return {
         "boxes": prediction[0]['boxes'][high_conf_indices].cpu().numpy(),
         "labels": prediction[0]['labels'][high_conf_indices].cpu().numpy(),

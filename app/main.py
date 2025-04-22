@@ -60,17 +60,21 @@ async def predict_api(file: UploadFile = File(...)):
             image_path = temp_input
 
         results = predict(image_path, model)
-        print(results['boxes'])
-        print(results['labels'])
-        print(results['scores'])
         if len(results['boxes'])>0:
+            print(results['boxes'])
+            print(results['labels'])
+            print(results['scores'])
             #classify(image_path,results,classifer)
             results = classify(image_path,results,classifer)
             # Process image and return the result
             image_stream = process_predictions(image_path, results)
             return StreamingResponse(image_stream, media_type="image/png")
-        #return JSONResponse(content=results)
-        return JSONResponse(content="done",status_code=200)
+    
+        return{
+                "status": "success",
+                "detections": False,
+                "message": "No abnormalities detected",
+            }        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

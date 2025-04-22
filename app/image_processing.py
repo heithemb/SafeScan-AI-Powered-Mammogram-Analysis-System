@@ -49,14 +49,14 @@ def process_predictions(image_path: str, predictions: dict, confidence_threshold
     for i, (box, label, class_result) in enumerate(zip(boxes, labels, classif)):
         xmin, ymin, xmax, ymax = map(int, box)
         # Draw bounding box
-        cv2.rectangle(pred_image, (xmin, ymin), (xmax, ymax), (147, 20, 255) , 2)
+        cv2.rectangle(pred_image, (xmin, ymin), (xmax, ymax), (209, 109, 145) , 2)
 
         # Add label and score
         class_name = CUSTOM_CLASSES[label - 1]
         # Get classification result if available
 
         label_text = f"{class_result} : {class_name} {scores[i]:.2f}"
-        cv2.putText(pred_image, label_text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (147, 20, 255), 2)
+        cv2.putText(pred_image, label_text, (xmin, ymin - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (209, 109, 145), 2)
 
         # Draw mask
         mask = masks[i].squeeze()

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:typed_data';
 import 'Controller.dart';
 import 'ResultsPage.dart';
@@ -11,6 +12,8 @@ class UploadHome extends StatefulWidget {
 
 class _UploadHomeState extends State<UploadHome> {
   Uint8List? _selectedImageBytes;
+  bool _isLoading = false;
+
   final ImagePicker _picker = ImagePicker();
 
   double responsiveHeight(double size, BuildContext context) {
@@ -104,8 +107,8 @@ class _UploadHomeState extends State<UploadHome> {
                     borderRadius: BorderRadius.circular(15),
                     child: Image.memory(
                       _selectedImageBytes!,
-                      width: 200,
-                      height: 200,
+                      width: 300,
+                      height: 300,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -115,28 +118,49 @@ class _UploadHomeState extends State<UploadHome> {
                 SizedBox(height: 40),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF9C2F4A),
+                    backgroundColor: Color.fromARGB(169, 0, 0, 0),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 60, vertical: 16),
                   ),
                   onPressed: () async {
-                    Uint8List? resultImageBytes =
-                    await Controller.uploadImage(_selectedImageBytes!);
-                    if (resultImageBytes != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ResultsPage(imageBytes: resultImageBytes),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Upload failed ❌')),
-                      );
-                    }
-                  },
+  setState(() { _isLoading = true; });
+
+  Uint8List? resultImageBytes = await Controller.uploadImage(_selectedImageBytes!);
+  
+  if (resultImageBytes != null) {
+    // Has detections - show processed image
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultsPage(
+          originalImageBytes: _selectedImageBytes!,
+          imageBytes: resultImageBytes,
+          hasDetections: true,
+        ),
+      ),
+    );
+  } else if (resultImageBytes == null && _selectedImageBytes != null) {
+    // No detections - show original image
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultsPage(
+          originalImageBytes: _selectedImageBytes!,
+          imageBytes: _selectedImageBytes!,
+          hasDetections: false,
+        ),
+      ),
+    );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Upload failed ❌')),
+            );
+          }
+          
+          setState(() { _isLoading = false; });
+        },
                   child: Text(
                     'Send',
                     style: TextStyle(fontSize: 16, color: Colors.white),
@@ -147,6 +171,17 @@ class _UploadHomeState extends State<UploadHome> {
               Spacer(),
             ],
           ),
+          // 👇 Black overlay + Lottie loader when loading
+      if (_isLoading)
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withOpacity(0.77),
+            child: Center(
+              child: Lottie.asset(
+                'assets/lottie/lottie_loading2.json',
+                width: 320,
+                height: 320,
+              ),),),),
         ],
       ),
     );
