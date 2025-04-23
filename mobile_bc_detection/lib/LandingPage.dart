@@ -1,6 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
@@ -10,95 +10,85 @@ class LandingPage extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Responsive design helpers
+    // Responsive font with tighter clamp for larger screens
     double responsiveFont(double size) {
-      final scale = screenWidth / 375; // Base width: iPhone 11
-      return (size * scale).clamp(size * 0.8, size * 1.5); // Limit scaling range
+      final scale = screenWidth / 375; // base: mobile
+      final scaled = size * scale;
+      // clamp between 0.8x and 1.2x
+      return scaled.clamp(size * 0.8, size * 1.2);
     }
-    
-    double responsiveWidth(double size) => size * screenWidth / 375;
-    double responsiveHeight(double size) => size * screenHeight / 812;
+
+    // Helper sizes
+    double horizontalPadding = min(24.0, screenWidth * 0.05);
+    double verticalPadding = min(16.0, screenHeight * 0.02);
+
+    // Determine max image box size
+    final maxImageSize = min(screenWidth * 0.8, 300.0);
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
+          // Background
           Positioned.fill(
-            child: Image.asset(
-              'assets/bg2.jpg', // Replace with your asset path
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/bg2.jpg', fit: BoxFit.cover),
           ),
-          
-          // Color overlay for better text visibility
           Positioned.fill(
-            child: Container(
-              color: const Color.fromARGB(150, 42, 14, 24), // Semi-transparent overlay
-            ),
+            child: Container(color: const Color.fromARGB(150, 42, 14, 24)),
           ),
 
           // Content
           SafeArea(
             child: SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: screenHeight,
-                ),
+                constraints: BoxConstraints(minHeight: screenHeight),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: responsiveWidth(24),
-                    vertical: responsiveHeight(16),
+                    horizontal: horizontalPadding,
+                    vertical: verticalPadding,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// Top bar - always in one line
-                      SizedBox(
-                        width: double.infinity,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  'SafeScan',
-                                  style: GoogleFonts.inter(
-                                    color: const Color(0xFFF27A9D),
-                                    fontSize: responsiveFont(24),
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                      // Top bar
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'SafeScan',
+                                style: GoogleFonts.inter(
+                                  color: const Color(0xFFF27A9D),
+                                  fontSize: responsiveFont(24),
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Row(
-                                  children: [
-                                    _navButton('About Us', responsiveFont(14)),
-                                    SizedBox(width: responsiveWidth(12)),
-                                    _navButton('Contact Us', responsiveFont(14)),
-                                  ],
-                                ),
+                          ),
+                          Flexible(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                children: [
+                                  _navButton('About Us', responsiveFont(14)),
+                                  SizedBox(width: 12),
+                                  _navButton('Contact Us', responsiveFont(14)),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
 
-                      SizedBox(height: responsiveHeight(40)),
+                      SizedBox(height: responsiveFont(16)),
 
-                      /// Image box
+                      // Image container with max size
                       Center(
                         child: Container(
-                          width: screenWidth * 0.8,
-                          height: screenWidth * 0.8,
-                          constraints: BoxConstraints(
-                            maxWidth: responsiveWidth(300),
-                            maxHeight: responsiveWidth(300),
-                          ),
+                          width: maxImageSize,
+                          height: maxImageSize,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(24),
                             image: const DecorationImage(
@@ -106,7 +96,7 @@ class LandingPage extends StatelessWidget {
                               fit: BoxFit.cover,
                             ),
                             border: Border.all(
-                              color: const Color(0xFFF27A9D), 
+                              color: const Color(0xFFF27A9D),
                               width: 1.5,
                             ),
                             boxShadow: [
@@ -120,19 +110,19 @@ class LandingPage extends StatelessWidget {
                           child: Align(
                             alignment: Alignment.topRight,
                             child: Container(
-                                margin: EdgeInsets.only(
-                                      top: responsiveWidth(100),
-                                      right: responsiveWidth(0),
-                                    ),                              
-                                padding: EdgeInsets.symmetric(
-                                horizontal: responsiveWidth(30),
-                                vertical: responsiveHeight(30),
+                              margin: EdgeInsets.only(
+                                top: maxImageSize * 0.25,
+                                right: 0,
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
                               decoration: BoxDecoration(
                                 color: const Color(0x80F27A9D),
-                                borderRadius: BorderRadius.horizontal(
-                                          left: Radius.circular(8),  // Circular on left
-                                          right: Radius.circular(0),),
+                                borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(8),
+                                ),
                                 border: Border.all(color: const Color(0xFFF27A9D)),
                               ),
                               child: Text(
@@ -149,9 +139,9 @@ class LandingPage extends StatelessWidget {
                         ),
                       ),
 
-                      SizedBox(height: responsiveHeight(40)),
+                      SizedBox(height: responsiveFont(24)),
 
-                      /// Title
+                      // Title
                       Center(
                         child: Text(
                           'Empowering Early Detection\nwith AI',
@@ -164,20 +154,19 @@ class LandingPage extends StatelessWidget {
                               Shadow(
                                 color: Colors.black.withOpacity(0.5),
                                 blurRadius: 4,
-                                offset: Offset(1, 1),
+                                offset: const Offset(1, 1),
                               ),
                             ],
                           ),
                         ),
                       ),
 
-                      SizedBox(height: responsiveHeight(16)),
+                      SizedBox(height: responsiveFont(16)),
 
-                      /// Subtitle
+                      // Subtitle
                       Center(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: responsiveWidth(16)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Text(
                             'SafeScan helps you detect potential breast cancer signs using AI-powered analysis of mammogram images.',
                             textAlign: TextAlign.center,
@@ -189,7 +178,7 @@ class LandingPage extends StatelessWidget {
                                 Shadow(
                                   color: Colors.black.withOpacity(0.5),
                                   blurRadius: 4,
-                                  offset: Offset(1, 1),
+                                  offset: const Offset(1, 1),
                                 ),
                               ],
                             ),
@@ -197,19 +186,17 @@ class LandingPage extends StatelessWidget {
                         ),
                       ),
 
-                      SizedBox(height: responsiveHeight(32)),
+                      SizedBox(height: responsiveFont(32)),
 
-                      /// Get Started button
+                      // Get Started button
                       Center(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/UploadPage');
-                          },
+                          onPressed: () => Navigator.pushNamed(context, '/UploadPage'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFA2314E),
                             padding: EdgeInsets.symmetric(
-                              horizontal: responsiveWidth(40),
-                              vertical: responsiveHeight(14),
+                              horizontal: responsiveFont(40),
+                              vertical: responsiveFont(14),
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -255,7 +242,7 @@ class LandingPage extends StatelessWidget {
             Shadow(
               color: Colors.black.withOpacity(0.5),
               blurRadius: 4,
-              offset: Offset(1, 1),
+              offset: const Offset(1, 1),
             ),
           ],
         ),

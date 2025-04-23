@@ -10,6 +10,7 @@ from dicom_utils import dicom_to_png
 from model_utils import load_model, predict
 from image_processing import process_predictions
 from classifier_utils import load_classifier , classify
+import time
 
 app = FastAPI()
 model = load_model()  # Initialize model on startup
@@ -28,8 +29,9 @@ def convert_image_to_base64(image_stream: io.BytesIO) -> str:
 
 @app.post("/predict")
 async def predict_api(file: UploadFile = File(...)):
+    start_time = time.time()
     # Extract file extension and validate
-    max_size = 10 * 1024 * 1024  # 10 MB
+    max_size = 60 * 1024 * 1024  # 10 MB
     file_size = len(await file.read())  # Read file to check size
     if file_size > max_size:
         raise HTTPException(status_code=400, detail="File is too large.")
@@ -68,16 +70,17 @@ async def predict_api(file: UploadFile = File(...)):
 
         results = predict(image_path, model)
         if len(results['boxes'])>0:
-            print(results['boxes'])
+            print(type(results['boxes']))
             print(results['labels'])
             print(results['scores'])
             #classify(image_path,results,classifer)
             results = classify(image_path,results,classifer)
             # Process image and return the result
             response_data = process_predictions(image_path, results)
+            print(time.time()-start_time)
             return JSONResponse(content=response_data)
     
-        return{
+        return {
                 "status": "success",
                 "detections": False,
                 "full_image": convert_image_to_base64(original_image_stream),

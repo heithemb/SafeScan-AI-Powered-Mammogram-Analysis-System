@@ -145,12 +145,15 @@ class _ImageViewerState extends State<ImageViewer> {
                   _buildFeatureSection('Morphology', features['morphology']),
                   const SizedBox(height: 15),
                   _buildFeatureSection('Intensity', features['intensity']),
+                  const SizedBox(height: 15),
+                  _buildFeatureSection('Texture', features['texture']),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _toggleFeatures,
                     child: const Text('Close'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(159, 173, 23, 96),
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ],

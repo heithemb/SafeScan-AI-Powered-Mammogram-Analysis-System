@@ -6,6 +6,10 @@ import torchvision
 from torchvision.models.detection import MaskRCNN
 from torchvision.models.detection.backbone_utils import BackboneWithFPN
 from torchvision.ops.feature_pyramid_network import LastLevelMaxPool
+transform = T.Compose([
+            T.ToTensor(),
+        ])
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_model(device: str = "cuda"):
     print("loading seg model ...")
     convnext = torchvision.models.convnext_tiny(weights='IMAGENET1K_V1')
@@ -46,8 +50,7 @@ def load_model(device: str = "cuda"):
         max_size=1333
     )
 
-    model.load_state_dict(torch.load(r"models\MaskRcnn+convnext_bestMap.pth", map_location=torch.device('cuda' if torch.cuda.is_available() else 'cpu')))
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.load_state_dict(torch.load(r"models\MaskRcnn+convnext_bestMap.pth", map_location=device))
     return model.to(device)
 
 def predict(image_path: str, model, device: str = "cuda"):
@@ -59,14 +62,12 @@ def predict(image_path: str, model, device: str = "cuda"):
     # Preprocess image
     try:
         img = Image.open(image_path).convert("RGB")
-        transform = T.Compose([
-            T.ToTensor(),
-        ])
+
     except Exception as e:
         print(f"Error during loading from local: {e}")
         raise
     # Ensure image is on the correct device
-    device = next(model.parameters()).device  # Get the model's device
+
     img_tensor = transform(img).unsqueeze(0).to(device)  # Move tensor to the correct device
     print(f"Image tensor moved to device: {device}")
     # Inference
@@ -209,5 +210,5 @@ def merge_overlapping_masks(masks, labels, scores, iou_threshold=0.0):
     if len(merged_masks) > 0:
         merged_masks = np.stack(merged_masks)
     else:
-        merged_masks = np.array([])
-    return merged_masks, np.array(merged_labels), np.array(merged_scores), np.array(merged_boxes)
+        merged_masks = []
+    return np.array(merged_masks), np.array(merged_labels), np.array(merged_scores), np.array(merged_boxes)
