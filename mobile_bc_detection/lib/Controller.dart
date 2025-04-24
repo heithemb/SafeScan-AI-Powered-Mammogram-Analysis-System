@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart';
 
 class Controller {
-  static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes) async {
+  static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
     final uri = Uri.parse('http://localhost:8000/predict');
 
     var request = MultipartRequest('POST', uri)
@@ -13,7 +13,9 @@ class Controller {
           imageBytes,
           filename: 'mammogram.png',
         ),
-      );
+      )
+      // Add pixel spacing as a form field
+      ..fields['pixel_spacing'] = pixelSpacing.toString();
 
     try {
       var response = await request.send();

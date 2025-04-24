@@ -10,7 +10,7 @@ transform = T.Compose([
             T.ToTensor(),
         ])
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-def load_model(device: str = "cuda"):
+def load_model(device: str = "cpu"):
     print("loading seg model ...")
     convnext = torchvision.models.convnext_tiny(weights='IMAGENET1K_V1')
     
@@ -53,7 +53,7 @@ def load_model(device: str = "cuda"):
     model.load_state_dict(torch.load(r"models\MaskRcnn+convnext_bestMap.pth", map_location=device))
     return model.to(device)
 
-def predict(image_path: str, model, device: str = "cuda"):
+def predict(image_path: str, model, device: str = "cpu"):
     model.eval()
     merged_masks = []
     merged_labels = []

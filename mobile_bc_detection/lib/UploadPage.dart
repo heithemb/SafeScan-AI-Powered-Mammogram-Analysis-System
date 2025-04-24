@@ -16,7 +16,46 @@ class _UploadHomeState extends State<UploadHome> {
   Uint8List? _selectedImageBytes;
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
+ String? _selectedSystem;
+  bool _showManualInput = false;
+  final TextEditingController _pixelSizeController = TextEditingController();
 
+  // List of mammogram systems with their pixel sizes in micrometers
+  final List<Map<String, dynamic>> _mammogramSystems = [
+    {'name': 'uMammo 890i', 'size': 0.0495},
+    {'name': 'uMammo 590u', 'size': 0.076},
+    {'name': 'uMammo 590i', 'size': 0.085},
+    {'name': 'BEMEMS Pinkview-DR Smart', 'size': 0.075},
+    {'name': 'Fujifilm FCRm', 'size': 0.050},
+    {'name': 'Siemens Mammomat Inspiration (70)', 'size': 0.070},
+    {'name': 'Siemens Mammomat Inspiration (85)', 'size': 0.085},
+    {'name': 'GE Senographe Essential', 'size': 0.100},
+    {'name': 'Hologic Selenia Dimensions', 'size': 0.070},
+    {'name': 'Philips MicroDose', 'size': 0.050},
+    {'name': 'Agfa DX-M HM5.0', 'size': 0.050},
+    {'name': 'Agfa DR 24M', 'size': 0.076},
+    {'name': 'Other', 'size': null},
+  ];
+
+  double _calculatePixelSpacing() {
+    if (_selectedSystem == 'Other') {
+      // For "Other" option, use the manually entered value
+      return double.tryParse(_pixelSizeController.text) ?? 0.0;
+    } else {
+      // For predefined systems, find the selected system and return its size
+      final system = _mammogramSystems.firstWhere(
+        (system) => system['name'] == _selectedSystem,
+        orElse: () => {'size': 0.0},
+      );
+      return system['size'] ?? 0.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pixelSizeController.dispose();
+    super.dispose();
+  }
   double responsiveFont(double size, double screenWidth) {
     final scale = screenWidth / 375;
     return (size * scale).clamp(size * 0.8, size * 1.2);
@@ -82,6 +121,98 @@ class _UploadHomeState extends State<UploadHome> {
     }
   }
 
+
+    Widget _buildSystemSelection(double screenWidth) {
+    final font14 = responsiveFont(14, screenWidth);
+    final font12 = responsiveFont(12, screenWidth);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          value: _selectedSystem,
+          decoration: InputDecoration(
+            labelText: 'Select Mammogram System',
+            labelStyle: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: font14,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Color(0xFFD16D91)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            filled: true,
+            fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
+          ),
+          dropdownColor: const Color(0xFF1A1A1A).withOpacity(0.9),
+          style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+          items: _mammogramSystems.map((system) {
+            return DropdownMenuItem<String>(
+              value: system['name'],
+              child: Text(system['name']),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedSystem = value;
+              _showManualInput = value == 'Other';
+            });
+          },
+          validator: (value) =>
+              value == null ? 'Please select a mammogram system' : null,
+        ),
+        if (_showManualInput)
+          Padding(
+            padding: const EdgeInsets.only(top: 10.0),
+            child: TextFormField(
+              controller: _pixelSizeController,
+              style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+              decoration: InputDecoration(
+                labelText: 'Enter Pixel Size (mm)',
+                labelStyle: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: font14,
+                ),
+                hintText: 'e.g., 0.1',
+                hintStyle: GoogleFonts.inter(
+                  color: Colors.white54,
+                  fontSize: font12,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.white),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Color(0xFFD16D91)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                filled: true,
+                fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (_selectedSystem == 'Other' &&
+                    (value == null || value.isEmpty)) {
+                  return 'Please enter pixel size';
+                }
+                if (value != null &&
+                    value.isNotEmpty &&
+                    double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+          ),
+      ],
+    );
+  }
+
+  // Update your build method to include the system selection
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -93,7 +224,7 @@ class _UploadHomeState extends State<UploadHome> {
       body: SizedBox.expand(
         child: Stack(
           children: [
-            // Background layers
+            // Background layers (keep existing)
             Positioned.fill(
               child: Image.asset('assets/bg2.jpg', fit: BoxFit.cover),
             ),
@@ -107,7 +238,7 @@ class _UploadHomeState extends State<UploadHome> {
                 child: Column(
                   children: [
                     _buildHeader(screenWidth),
-                    const SizedBox(height: 120),
+                    const SizedBox(height: 60), // Reduced from 120
                     Center(
                       child: GestureDetector(
                         onTap: _pickImage,
@@ -121,34 +252,39 @@ class _UploadHomeState extends State<UploadHome> {
                           alignment: Alignment.center,
                           child: _selectedImageBytes == null
                               ? Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.upload_file,
-                                  size: 48, color: Colors.white),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Upload Mammogram',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white,
-                                  fontSize: font16,
-                                ),
-                              ),
-                            ],
-                          )
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.upload_file,
+                                        size: 48, color: Colors.white),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Upload Mammogram',
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: font16,
+                                      ),
+                                    ),
+                                  ],
+                                )
                               : ClipRRect(
-                            borderRadius: BorderRadius.circular(15),
-                            child: Image.memory(
-                              _selectedImageBytes!,
-                              width: boxSize,
-                              height: boxSize,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Image.memory(
+                                    _selectedImageBytes!,
+                                    width: boxSize,
+                                    height: boxSize,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
                     if (_selectedImageBytes != null) ...[
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                        child: _buildSystemSelection(screenWidth),
+                      ),
+                      const SizedBox(height: 20),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromARGB(121, 0, 0, 0),
@@ -159,9 +295,39 @@ class _UploadHomeState extends State<UploadHome> {
                               horizontal: 60, vertical: 16),
                         ),
                         onPressed: () async {
+                          if (_selectedSystem == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Please select a mammogram system',
+                                  style: GoogleFonts.inter(),
+                                ),
+                                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            );
+                            return;
+                          }
+                          if (_selectedSystem == 'Other' &&
+                              (_pixelSizeController.text.isEmpty ||
+                                  double.tryParse(
+                                          _pixelSizeController.text) ==
+                                      null)) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Please enter a valid pixel spacing',
+                                  style: GoogleFonts.inter(),
+                                ),
+                                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+                              ),
+                            );
+                            return;
+                          }
+
                           setState(() => _isLoading = true);
+                          final pixelSpacing = _calculatePixelSpacing();
                           final result = await Controller.uploadImage(
-                              _selectedImageBytes!);
+                              _selectedImageBytes!, pixelSpacing);
                           setState(() => _isLoading = false);
                           Navigator.push(
                             context,
@@ -187,7 +353,7 @@ class _UploadHomeState extends State<UploadHome> {
               ),
             ),
 
-            // Loading overlay
+            // Loading overlay (keep existing)
             if (_isLoading)
               Positioned.fill(
                 child: Container(

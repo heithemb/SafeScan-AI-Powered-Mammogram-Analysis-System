@@ -12,8 +12,29 @@ CONTOUR_COLOR = [(0, 255, 255),(209, 109, 145)]  # BGR yellow for contours
 
 from skimage import morphology, measure, feature
 from skimage.measure import regionprops, perimeter_crofton
+def draw_rounded_rectangle(img, top_left, bottom_right, color, corner_radius=10, thickness=-1, alpha=0.6):
+    """Draw rectangle with rounded corners and opacity"""
+    overlay = img.copy()
+    x1, y1 = top_left
+    x2, y2 = bottom_right
 
-def calculate_lesion_features(mask, image, pixel_spacing=(0.1, 0.1), min_area_px=10):
+    # Draw straight parts on the overlay
+    cv2.rectangle(overlay, (x1 + corner_radius, y1), (x2 - corner_radius, y2), color, thickness)
+    cv2.rectangle(overlay, (x1, y1 + corner_radius), (x2, y2 - corner_radius), color, thickness)
+
+    # Draw rounded corners on the overlay
+    cv2.circle(overlay, (x1 + corner_radius, y1 + corner_radius), corner_radius, color, thickness)
+    cv2.circle(overlay, (x2 - corner_radius, y1 + corner_radius), corner_radius, color, thickness)
+    cv2.circle(overlay, (x1 + corner_radius, y2 - corner_radius), corner_radius, color, thickness)
+    cv2.circle(overlay, (x2 - corner_radius, y2 - corner_radius), corner_radius, color, thickness)
+
+    # Blend overlay with original image using alpha
+    cv2.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
+
+    return img
+
+
+def calculate_lesion_features(mask, image, pixel_spacing, min_area_px=10):
     from skimage.color import rgb2gray
 
     # If image has 3 channels, convert to grayscale
@@ -99,8 +120,11 @@ def calculate_lesion_features(mask, image, pixel_spacing=(0.1, 0.1), min_area_px
         }
     }
 
-def process_predictions(image_path: str, predictions: dict, confidence_threshold=0.5, pixel_spacing=(0.1,0.1)):
+def process_predictions(image_path: str, predictions: dict, pixel_spacing: float = None, confidence_threshold=0.5):
     try:
+
+        pixel_spacing=(pixel_spacing,pixel_spacing)
+        print(pixel_spacing)
         # Load and convert image
         with Image.open(image_path) as img:
             image_np = np.array(img.convert("RGB"))
@@ -143,7 +167,7 @@ def process_predictions(image_path: str, predictions: dict, confidence_threshold
             # Calculate text position
             label_text = f"{cls_result} : {CUSTOM_CLASSES[label-1]} {scores[i]:.2f}"
             font = cv2.FONT_HERSHEY_DUPLEX
-            font_scale = 1.2
+            font_scale = 1.6
             thickness = 2
             (text_w, text_h), baseline = cv2.getTextSize(
                 label_text, font, font_scale, thickness
@@ -162,8 +186,15 @@ def process_predictions(image_path: str, predictions: dict, confidence_threshold
 
             # Draw on full image
             cv2.rectangle(full_image, (xmin, ymin), (xmax, ymax), color_tbm, 2)
+             # Draw rounded rectangle background
+            padding = 5
+            corner_radius = 8
+            bg_top_left = (max(0, text_x - padding), max(0, text_y - text_h - padding))
+            bg_bottom_right = (min(image_width, text_x + text_w + padding), min(image_height, text_y + padding))
+
+            draw_rounded_rectangle(full_image, bg_top_left, bg_bottom_right, color_tbm, corner_radius,  alpha=0.6)
             cv2.putText(full_image, label_text, (text_x, text_y),
-                       font, font_scale, color_tbm, thickness)
+                       font, font_scale, (255,255,255), thickness)
             
             # Add mask overlay
             full_image = np.where(mask[..., None], 
@@ -177,8 +208,11 @@ def process_predictions(image_path: str, predictions: dict, confidence_threshold
             # Process individual prediction
             single_pred = image_np.copy()
             cv2.rectangle(single_pred, (xmin, ymin), (xmax, ymax), color_tbm, 2)
+            
+            draw_rounded_rectangle(single_pred, bg_top_left, bg_bottom_right, color_tbm, corner_radius,  alpha=0.6)
             cv2.putText(single_pred, label_text, (text_x, text_y),
-                       font, font_scale, color_tbm, thickness)
+                       font, font_scale, (255,255,255), thickness)
+            
             single_pred = np.where(mask[..., None], 
                                  cv2.addWeighted(single_pred, 1, colored_mask, 0.3, 0),
                                  single_pred)

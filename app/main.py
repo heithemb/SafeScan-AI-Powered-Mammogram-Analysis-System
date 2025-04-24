@@ -11,6 +11,8 @@ from model_utils import load_model, predict
 from image_processing import process_predictions
 from classifier_utils import load_classifier , classify
 import time
+from fastapi import Form  # Add this import at the top
+
 
 app = FastAPI()
 model = load_model()  # Initialize model on startup
@@ -28,8 +30,21 @@ def convert_image_to_base64(image_stream: io.BytesIO) -> str:
             return base64.b64encode(image_stream.read()).decode('utf-8')
 
 @app.post("/predict")
-async def predict_api(file: UploadFile = File(...)):
+async def predict_api(file: UploadFile = File(...),pixel_spacing: str = Form(None)):
     start_time = time.time()
+
+
+    # Convert pixel_spacing to float if provided
+    try:
+        pixel_spacing_float = float(pixel_spacing) if pixel_spacing else None
+        print("pixel : ",pixel_spacing_float)
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid pixel spacing value. Must be a number."
+        )
+
+
     # Extract file extension and validate
     max_size = 60 * 1024 * 1024  # 10 MB
     file_size = len(await file.read())  # Read file to check size
@@ -76,7 +91,7 @@ async def predict_api(file: UploadFile = File(...)):
             #classify(image_path,results,classifer)
             results = classify(image_path,results,classifer)
             # Process image and return the result
-            response_data = process_predictions(image_path, results)
+            response_data = process_predictions(image_path, results , pixel_spacing_float)
             print(time.time()-start_time)
             return JSONResponse(content=response_data)
     
