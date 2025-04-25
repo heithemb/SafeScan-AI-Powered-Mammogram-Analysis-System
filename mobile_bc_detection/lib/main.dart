@@ -8,13 +8,15 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  final GlobalKey aboutUsKey = GlobalKey();
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/':(context)=>LandingPage(),
+        '/': (context) => LandingPage(aboutUsKey: aboutUsKey), // Pass the GlobalKey here
         '/UploadPage':(context)=>UploadHome(),
       },
     );
