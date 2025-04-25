@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:http/http.dart';
 
+
+
 class Controller {
   static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
     final uri = Uri.parse('http://localhost:8000/predict');
@@ -47,6 +49,29 @@ class Controller {
       }
     } catch (e) {
       print('🔥 Error during upload: $e');
+      return null;
+    }
+  }
+
+
+static Future<Map<String, dynamic>?> sendEmail(Map<String, dynamic> formData) async {
+    final uri = Uri.parse('http://localhost:8000/send-email');
+    
+    try {
+      final response = await post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(formData),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        print('❌ Email sending failed with status: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('🔥 Error during email sending: $e');
       return null;
     }
   }

@@ -1,17 +1,23 @@
 #uvicorn main:app --reload
 import base64
+
 import io
+import smtplib
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import uuid
+from fastapi import Body  # Add this import
 from dicom_utils import dicom_to_png
 from model_utils import load_model, predict
 from image_processing import process_predictions
 from classifier_utils import load_classifier , classify
 import time
-from fastapi import Form  # Add this import at the top
+from fastapi import Form
+
+from sendmail import EmailData, reply_email, send_email  # Add this import at the top
+
 
 
 app = FastAPI()
@@ -109,3 +115,36 @@ async def predict_api(file: UploadFile = File(...),pixel_spacing: str = Form(Non
             os.remove(temp_input)
         if os.path.exists(temp_output):
             os.remove(temp_output)
+
+
+@app.post("/send-email")
+async def send_email_endpoint(email_data: EmailData):
+    print("in send mail")
+    try:
+        # Extract data from the request
+        name = email_data.name
+        email = email_data.email
+        subject = email_data.subject
+        message = email_data.message
+        
+        # Create the email body
+        email_body = f"""
+        New Contact Form Submission:
+        
+        Name: {name}
+        Email: {email}
+        Subject: {subject}
+        Message:
+        {message}
+        """
+        
+        # Send the email (you can uncomment this when ready)
+        send_email(subject, email,name , message ,email_body, "exemple.contact@gmail.com")
+        reply_email(subject , email,name,message)
+        
+        # For now, just print and return success
+        print("Received email data:", email_data.dict())
+        return {"status": "success", "message": "Email received successfully"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

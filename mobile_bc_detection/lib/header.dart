@@ -13,7 +13,7 @@ Widget _navButton(String title, double fontSize, BuildContext context) {
   );
 }
 
-Widget buildHeader(BuildContext context, double screenWidth) {
+Widget buildHeader(BuildContext context, double screenWidth ) {
   final font24 = responsiveFont(24, screenWidth);
   final font14 = responsiveFont(14, screenWidth);
 
@@ -51,21 +51,23 @@ Widget buildHeader(BuildContext context, double screenWidth) {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.pushNamed(context, '/');
-                  },
+                    Navigator.pushNamed(
+                      context,
+                      '/',
+                    ).then((_) {
+                      Scrollable.ensureVisible(aboutUsKey.currentContext!);
+                    }) ; },
+
                   child: _navButton('About Us', font14, context),
                 ),
+
+
                 const SizedBox(width: 12),
                 GestureDetector(
                   onTap: () {
-                    // Navigate to LandingPage and pass the GlobalKey
-                    Navigator.pushNamed(
-                      context,
-                      '/landing',
-                      arguments: {'aboutUsKey': aboutUsKey},
-                    ).then((_) {
-                      Scrollable.ensureVisible(aboutUsKey.currentContext!);
-                    });},
+                  Navigator.pushNamed(context, '/contactus');
+
+                    ;},
                     child: _navButton('Contact Us', font14, context),
                 ),
               ],
