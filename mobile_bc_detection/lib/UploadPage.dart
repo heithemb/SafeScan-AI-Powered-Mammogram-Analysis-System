@@ -21,6 +21,7 @@ class _UploadHomeState extends State<UploadHome> {
   bool _showManualInput = false;
   final TextEditingController _pixelSizeController = TextEditingController();
 
+
   // List of mammogram systems with their pixel sizes in micrometers
   final List<Map<String, dynamic>> _mammogramSystems = [
     {'name': 'uMammo 890i', 'size': 0.0495},
@@ -186,8 +187,8 @@ class _UploadHomeState extends State<UploadHome> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    buildHeader(context,screenWidth),
-                    const SizedBox(height: 60), // Reduced from 120
+                    buildHeader(context, screenWidth),
+                    const SizedBox(height: 60),
                     Center(
                       child: GestureDetector(
                         onTap: _pickImage,

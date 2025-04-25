@@ -1,8 +1,7 @@
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:mobile_bc_detection/header.dart';
+import 'header.dart';
 import 'uploadpage.dart';
 import 'image_viewer.dart';
 
@@ -11,11 +10,13 @@ class ResultsPage extends StatefulWidget {
   final Uint8List originalImageBytes;
   final bool hasDetections;
 
+
   const ResultsPage({
     Key? key,
     required this.result,
     required this.originalImageBytes,
     required this.hasDetections,
+
   }) : super(key: key);
 
   @override
@@ -48,7 +49,6 @@ class _ResultsPageState extends State<ResultsPage> with SingleTickerProviderStat
       _showOverlay ? _animationController.forward() : _animationController.reverse();
     });
   }
-
 
   Widget _buildImageViewer(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -92,7 +92,9 @@ class _ResultsPageState extends State<ResultsPage> with SingleTickerProviderStat
         ),
         onPressed: () => Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => UploadHome()),
+          MaterialPageRoute(
+            builder: (context) => UploadHome(), // Remove parameter
+          ),
         ),
         child: const Text('Back to Upload', style: TextStyle(fontSize: 16)),
       ),
@@ -102,16 +104,17 @@ class _ResultsPageState extends State<ResultsPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-              image: AssetImage('assets/bg2.jpg'), fit: BoxFit.cover),
+            image: AssetImage('assets/bg2.jpg'),
+            fit: BoxFit.cover,
+          ),
         ),
         child: Container(
-          color: Color.fromARGB(150, 42, 14, 24),
+          color: const Color.fromARGB(150, 42, 14, 24),
           child: SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) => SingleChildScrollView(
@@ -120,7 +123,8 @@ class _ResultsPageState extends State<ResultsPage> with SingleTickerProviderStat
                   child: IntrinsicHeight(
                     child: Column(
                       children: [
-                        buildHeader(context,screenWidth),
+                        // Updated header with widget.aboutUsKey
+                        buildHeader(context, screenWidth),
                         _buildImageViewer(context),
                         _buildBackButton(),
                       ],

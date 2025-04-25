@@ -2,8 +2,6 @@ import 'dart:typed_data';
 import 'dart:convert';
 import 'package:http/http.dart';
 
-
-
 class Controller {
   static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
     final uri = Uri.parse('http://localhost:8000/predict');
@@ -52,11 +50,9 @@ class Controller {
       return null;
     }
   }
-
-
-static Future<Map<String, dynamic>?> sendEmail(Map<String, dynamic> formData) async {
+  static Future<Map<String, dynamic>?> sendEmail(Map<String, dynamic> formData) async {
     final uri = Uri.parse('http://localhost:8000/send-email');
-    
+
     try {
       final response = await post(
         uri,
