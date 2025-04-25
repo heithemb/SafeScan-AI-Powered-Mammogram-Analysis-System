@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:mobile_bc_detection/ContactUs.dart';
 import 'UploadPage.dart';
 import 'LandingPage.dart';
 
@@ -18,6 +19,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => LandingPage(aboutUsKey: aboutUsKey), // Pass the GlobalKey here
         '/UploadPage':(context)=>UploadHome(),
+        '/contactus':(context)=>ContactUs(),
       },
     );
   }

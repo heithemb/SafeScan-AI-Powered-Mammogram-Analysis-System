@@ -2,47 +2,65 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class LandingPage extends StatelessWidget {
-final GlobalKey aboutUsKey;
+class LandingPage extends StatefulWidget {
+  final GlobalKey aboutUsKey;
+  final bool scrollToAboutUs; // 👈 Add a flag for triggering scroll
 
-  const LandingPage({super.key, required this.aboutUsKey});
+  const LandingPage({
+    super.key,
+    required this.aboutUsKey,
+    this.scrollToAboutUs = false, // 👈 Optional, default is false
+  });
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    // 👇 Wait for build and scroll if needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.scrollToAboutUs && widget.aboutUsKey.currentContext != null) {
+        Scrollable.ensureVisible(
+          widget.aboutUsKey.currentContext!,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // Responsive font with tighter clamp for larger screens
     double responsiveFont(double size) {
-      final scale = screenWidth / 375; // base: mobile
+      final scale = screenWidth / 375;
       final scaled = size * scale;
-      // clamp between 0.8x and 1.2x
       return scaled.clamp(size * 0.8, size * 1.2);
     }
 
-    // Helper sizes
     double horizontalPadding = min(24.0, screenWidth * 0.05);
     double verticalPadding = min(16.0, screenHeight * 0.02);
-
-    // Determine max image box size
     final maxImageSize = min(screenWidth * 0.8, 300.0);
-
-    // Create a key for the About Us section
-    final GlobalKey aboutUsKey = GlobalKey();
 
     return Scaffold(
       body: Stack(
         children: [
-          // Background
           Positioned.fill(
             child: Image.asset('assets/bg2.jpg', fit: BoxFit.cover),
           ),
           Positioned.fill(
             child: Container(color: const Color.fromARGB(150, 42, 14, 24)),
           ),
-
-          // Content
           SafeArea(
             child: SingleChildScrollView(
+              controller: _scrollController,
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: screenHeight),
                 child: Padding(
@@ -53,22 +71,19 @@ final GlobalKey aboutUsKey;
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Top bar
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-          child: Text(
-                'SafeScan',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFF27A9D),
-                  fontSize: responsiveFont(24),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          
-
+                            child: Text(
+                              'SafeScan',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFF27A9D),
+                                fontSize: responsiveFont(24),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                           Flexible(
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
@@ -79,14 +94,17 @@ final GlobalKey aboutUsKey;
                                     responsiveFont(14),
                                     onPressed: () {
                                       Scrollable.ensureVisible(
-                                        aboutUsKey.currentContext!,
+                                        widget.aboutUsKey.currentContext!,
                                         duration: const Duration(milliseconds: 500),
                                         curve: Curves.easeInOut,
                                       );
                                     },
                                   ),
-                                  SizedBox(width: 12),
-                                  _navButton('Contact Us', responsiveFont(14)),
+                                  const SizedBox(width: 12),
+                                  GestureDetector(
+                                  onTap: () {
+                                  Navigator.pushNamed(context, '/contactus');},
+                                    child:  _navButton('Contact Us', responsiveFont(14)),),
                                 ],
                               ),
                             ),
@@ -96,10 +114,9 @@ final GlobalKey aboutUsKey;
 
                       SizedBox(height: responsiveFont(16)),
 
-                      // Image container with max size
                       Center(
                         child: Container(
-                        margin: EdgeInsets.only(top: responsiveFont(60)), // or whatever value you want
+                          margin: EdgeInsets.only(top: responsiveFont(60)),
                           width: maxImageSize,
                           height: maxImageSize,
                           decoration: BoxDecoration(
@@ -127,7 +144,7 @@ final GlobalKey aboutUsKey;
                                 top: maxImageSize * 0.25,
                                 right: 0,
                               ),
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 8,
                               ),
@@ -154,7 +171,6 @@ final GlobalKey aboutUsKey;
 
                       SizedBox(height: responsiveFont(24)),
 
-                      // Title
                       Center(
                         child: Text(
                           'Empowering Early Detection\nwith AI',
@@ -176,7 +192,6 @@ final GlobalKey aboutUsKey;
 
                       SizedBox(height: responsiveFont(16)),
 
-                      // Subtitle
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -201,12 +216,15 @@ final GlobalKey aboutUsKey;
 
                       SizedBox(height: responsiveFont(32)),
 
-                      // Get Started button
-                     
-
                       Center(
                         child: ElevatedButton(
-                          onPressed: () => Navigator.pushNamed(context, '/UploadPage'),
+                          onPressed: () => Navigator.pushNamed(
+                            context,
+                            '/UploadPage',
+                            arguments: {
+                              'key': widget.aboutUsKey,
+                            },
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFA2314E),
                             padding: EdgeInsets.symmetric(
@@ -234,21 +252,21 @@ final GlobalKey aboutUsKey;
                         ),
                       ),
 
-                      // About Us Section
                       SizedBox(height: responsiveFont(60)),
-                     Center(
+
+                      Center(
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
                             maxWidth: screenWidth > 1100
                                 ? 900
                                 : screenWidth > 800
                                     ? 750
-                                    : screenWidth >750 ?700
-                                       : double.infinity,
-
+                                    : screenWidth > 750
+                                        ? 700
+                                        : double.infinity,
                           ),
                           child: Container(
-                            key: aboutUsKey,
+                            key: widget.aboutUsKey,
                             padding: EdgeInsets.symmetric(
                               horizontal: horizontalPadding,
                               vertical: responsiveFont(25),
@@ -262,50 +280,50 @@ final GlobalKey aboutUsKey;
                                 width: 1,
                               ),
                             ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Section Title
-                            Text(
-                              'About SafeScan',
-                              style: GoogleFonts.inter(
-                                color: const Color(0xFFF27A9D),
-                                fontSize: responsiveFont(20),
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    offset: const Offset(1, 1),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: responsiveFont(16)),
-                            // Content
-                            Text(
-                              'At SafeScan, we are dedicated to revolutionizing breast cancer detection through advanced technology and clinical insight. Our mission is to empower radiologists with intelligent tools that assist in the early detection. We combine cutting-edge AI algorithms with a user-friendly interface to support healthcare professionals in identifying potential malignancies with greater precision and confidence.\n\nTogether, we believe technology and medicine can save lives—one mammogram at a time.',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontSize: responsiveFont(14),
-                                height: 1.6,
-                              ),
-                            ),
-                            SizedBox(height: responsiveFont(16)),
-                            // Decorative elements
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildPinkDot(),
-                                SizedBox(width: 8),
-                                _buildPinkDot(),
-                                SizedBox(width: 8),
-                                _buildPinkDot(),
+                                Text(
+                                  'About SafeScan',
+                                  style: GoogleFonts.inter(
+                                    color: const Color(0xFFF27A9D),
+                                    fontSize: responsiveFont(20),
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.5),
+                                        blurRadius: 4,
+                                        offset: const Offset(1, 1),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: responsiveFont(16)),
+                                Text(
+                                  'At SafeScan, we are dedicated to revolutionizing breast cancer detection through advanced technology and clinical insight...',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: responsiveFont(14),
+                                    height: 1.6,
+                                  ),
+                                ),
+                                SizedBox(height: responsiveFont(16)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    _buildPinkDot(),
+                                    const SizedBox(width: 8),
+                                    _buildPinkDot(),
+                                    const SizedBox(width: 8),
+                                    _buildPinkDot(),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),),),
+                      ),
+
                       SizedBox(height: responsiveFont(40)),
                     ],
                   ),
