@@ -6,6 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'Controller.dart';
 import 'ResultsPage.dart';
+import 'header.dart';
 
 class UploadHome extends StatefulWidget {
   @override
@@ -51,68 +52,16 @@ class _UploadHomeState extends State<UploadHome> {
     }
   }
 
+
+
   @override
   void dispose() {
     _pixelSizeController.dispose();
     super.dispose();
   }
-  double responsiveFont(double size, double screenWidth) {
-    final scale = screenWidth / 375;
-    return (size * scale).clamp(size * 0.8, size * 1.2);
-  }
 
-  Widget _navButton(String title, double fontSize) {
-    return TextButton(
-      onPressed: () {},
-      child: Text(
-        title,
-        style: GoogleFonts.inter(
-          color: const Color(0xFFD16D91),
-          fontSize: fontSize,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
 
-  Widget _buildHeader(double screenWidth) {
-    final font24 = responsiveFont(24, screenWidth);
-    final font14 = responsiveFont(14, screenWidth);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                'SafeScan',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFD16D91),
-                  fontSize: font24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
-                children: [
-                  _navButton('About Us', font14),
-                  const SizedBox(width: 12),
-                  _navButton('Contact Us', font14),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -229,7 +178,7 @@ class _UploadHomeState extends State<UploadHome> {
               child: Image.asset('assets/bg2.jpg', fit: BoxFit.cover),
             ),
             Positioned.fill(
-              child: Container(color: Colors.black.withOpacity(0.6)),
+            child: Container(color: const Color.fromARGB(150, 42, 14, 24)),
             ),
 
             // Main content
@@ -237,7 +186,7 @@ class _UploadHomeState extends State<UploadHome> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildHeader(screenWidth),
+                    buildHeader(context,screenWidth),
                     const SizedBox(height: 60), // Reduced from 120
                     Center(
                       child: GestureDetector(

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class LandingPage extends StatelessWidget {
-  const LandingPage({super.key});
+final GlobalKey aboutUsKey;
 
+  const LandingPage({super.key, required this.aboutUsKey});
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -24,6 +25,9 @@ class LandingPage extends StatelessWidget {
 
     // Determine max image box size
     final maxImageSize = min(screenWidth * 0.8, 300.0);
+
+    // Create a key for the About Us section
+    final GlobalKey aboutUsKey = GlobalKey();
 
     return Scaffold(
       body: Stack(
@@ -54,25 +58,33 @@ class LandingPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'SafeScan',
-                                style: GoogleFonts.inter(
-                                  color: const Color(0xFFF27A9D),
-                                  fontSize: responsiveFont(24),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
+          child: Text(
+                'SafeScan',
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFF27A9D),
+                  fontSize: responsiveFont(24),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          
+
                           Flexible(
                             child: FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Row(
                                 children: [
-                                  _navButton('About Us', responsiveFont(14)),
+                                  _navButton(
+                                    'About Us',
+                                    responsiveFont(14),
+                                    onPressed: () {
+                                      Scrollable.ensureVisible(
+                                        aboutUsKey.currentContext!,
+                                        duration: const Duration(milliseconds: 500),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                  ),
                                   SizedBox(width: 12),
                                   _navButton('Contact Us', responsiveFont(14)),
                                 ],
@@ -87,6 +99,7 @@ class LandingPage extends StatelessWidget {
                       // Image container with max size
                       Center(
                         child: Container(
+                        margin: EdgeInsets.only(top: responsiveFont(60)), // or whatever value you want
                           width: maxImageSize,
                           height: maxImageSize,
                           decoration: BoxDecoration(
@@ -189,6 +202,8 @@ class LandingPage extends StatelessWidget {
                       SizedBox(height: responsiveFont(32)),
 
                       // Get Started button
+                     
+
                       Center(
                         child: ElevatedButton(
                           onPressed: () => Navigator.pushNamed(context, '/UploadPage'),
@@ -218,6 +233,80 @@ class LandingPage extends StatelessWidget {
                           ),
                         ),
                       ),
+
+                      // About Us Section
+                      SizedBox(height: responsiveFont(60)),
+                     Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: screenWidth > 1100
+                                ? 900
+                                : screenWidth > 800
+                                    ? 750
+                                    : screenWidth >750 ?700
+                                       : double.infinity,
+
+                          ),
+                          child: Container(
+                            key: aboutUsKey,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: horizontalPadding,
+                              vertical: responsiveFont(25),
+                            ),
+                            margin: EdgeInsets.only(top: responsiveFont(100)),
+                            decoration: BoxDecoration(
+                              color: const Color(0x30F27A9D),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0x50F27A9D),
+                                width: 1,
+                              ),
+                            ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Section Title
+                            Text(
+                              'About SafeScan',
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFFF27A9D),
+                                fontSize: responsiveFont(20),
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.5),
+                                    blurRadius: 4,
+                                    offset: const Offset(1, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: responsiveFont(16)),
+                            // Content
+                            Text(
+                              'At SafeScan, we are dedicated to revolutionizing breast cancer detection through advanced technology and clinical insight. Our mission is to empower radiologists with intelligent tools that assist in the early detection. We combine cutting-edge AI algorithms with a user-friendly interface to support healthcare professionals in identifying potential malignancies with greater precision and confidence.\n\nTogether, we believe technology and medicine can save lives—one mammogram at a time.',
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontSize: responsiveFont(14),
+                                height: 1.6,
+                              ),
+                            ),
+                            SizedBox(height: responsiveFont(16)),
+                            // Decorative elements
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                _buildPinkDot(),
+                                SizedBox(width: 8),
+                                _buildPinkDot(),
+                                SizedBox(width: 8),
+                                _buildPinkDot(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),),),
+                      SizedBox(height: responsiveFont(40)),
                     ],
                   ),
                 ),
@@ -229,9 +318,9 @@ class LandingPage extends StatelessWidget {
     );
   }
 
-  Widget _navButton(String title, double fontSize) {
+  Widget _navButton(String title, double fontSize, {VoidCallback? onPressed}) {
     return TextButton(
-      onPressed: () {},
+      onPressed: onPressed,
       child: Text(
         title,
         style: GoogleFonts.inter(
@@ -246,6 +335,24 @@ class LandingPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPinkDot() {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF27A9D),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF27A9D).withOpacity(0.7),
+            blurRadius: 4,
+            spreadRadius: 1,
+          ),
+        ],
       ),
     );
   }
