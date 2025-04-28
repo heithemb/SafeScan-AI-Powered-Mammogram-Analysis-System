@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 
 class ImageViewer extends StatefulWidget {
   final Map<String, dynamic> result;
@@ -32,14 +30,30 @@ class _ImageViewerState extends State<ImageViewer> {
   int _currentImageIndex = -1;
   Timer? _textTimer;
   bool _showImageText = false;
+
+  // Add these:
+  bool _showZoomText = false;
+  String _zoomText = "";
+  Timer? _zoomTextTimer;
+
   bool _showFeatures = false;
-  
 
   void _showTemporaryText() {
     setState(() => _showImageText = true);
     _textTimer?.cancel();
     _textTimer = Timer(const Duration(seconds: 1), () {
       if (mounted) setState(() => _showImageText = false);
+    });
+  }
+
+  void _showZoomStatus(bool zoomEnabled) {
+    setState(() {
+      _zoomText = zoomEnabled ? "Zoom enabled" : "Zoom disabled";
+      _showZoomText = true;
+    });
+    _zoomTextTimer?.cancel();
+    _zoomTextTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) setState(() => _showZoomText = false);
     });
   }
 
@@ -63,24 +77,21 @@ class _ImageViewerState extends State<ImageViewer> {
 
   Map<String, dynamic>? _getCurrentFeatures() {
     if (!widget.hasDetections) return null;
-    
     if (_currentImageIndex == -1) {
-      // For full image, show features only if there's exactly one prediction
       if ((widget.result['individual_predictions']?.length ?? 0) == 1) {
         return widget.result['individual_predictions'][0]['features'];
       }
       return null;
     } else {
-      // For individual predictions
       return widget.result['individual_predictions'][_currentImageIndex]['features'];
     }
   }
 
   Widget _buildImageStack() {
     Uint8List currentImage = widget.hasDetections
-        ? (_currentImageIndex == -1 
-            ? widget.result["full_image"] 
-            : widget.result['individual_predictions'][_currentImageIndex]['image'])
+        ? (_currentImageIndex == -1
+        ? widget.result["full_image"]
+        : widget.result['individual_predictions'][_currentImageIndex]['image'])
         : widget.originalImageBytes;
 
     return AnimatedSwitcher(
@@ -128,18 +139,16 @@ class _ImageViewerState extends State<ImageViewer> {
             child: Container(
               decoration: BoxDecoration(
                 color: const Color.fromARGB(156, 0, 0, 0),
-                borderRadius: BorderRadius.circular(15),),
-                padding: const EdgeInsets.all(20),
-                child: Column(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Lesion Features',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
                   _buildFeatureSection('Morphology', features['morphology']),
@@ -150,11 +159,11 @@ class _ImageViewerState extends State<ImageViewer> {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _toggleFeatures,
-                    child: const Text('Close'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(159, 173, 23, 96),
                       foregroundColor: Colors.white,
                     ),
+                    child: const Text('Close'),
                   ),
                 ],
               ),
@@ -162,7 +171,7 @@ class _ImageViewerState extends State<ImageViewer> {
           ),
         ),
       ),
-      );
+    );
   }
 
   Widget _buildFeatureSection(String title, Map<String, dynamic> features) {
@@ -171,24 +180,15 @@ class _ImageViewerState extends State<ImageViewer> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 18,
-            fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white70, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ...features.entries.map((entry) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: [
-              Text(
-                '${entry.key}: ',
-                style: const TextStyle(color: Colors.white54),
-              ),
-              Text(
-                entry.value.toStringAsFixed(2),
-                style: const TextStyle(color: Colors.white),
-              ),
+              Text('${entry.key}: ', style: const TextStyle(color: Colors.white54)),
+              Text(entry.value.toStringAsFixed(2), style: const TextStyle(color: Colors.white)),
               if (entry.key == 'area_mm2') const Text(' mm²', style: TextStyle(color: Colors.white54)),
               if (entry.key == 'perimeter_mm') const Text(' mm', style: TextStyle(color: Colors.white54)),
             ],
@@ -200,17 +200,13 @@ class _ImageViewerState extends State<ImageViewer> {
 
   bool _shouldShowFeaturesButton() {
     if (!widget.hasDetections) return false;
-    
-    // Show button if:
-    // 1. Only one prediction exists (show on full image)
-    // 2. Viewing individual prediction (not full image)
-    return (widget.result['individual_predictions']?.length ?? 0) == 1 || 
-           _currentImageIndex != -1;
+    return (widget.result['individual_predictions']?.length ?? 0) == 1 || _currentImageIndex != -1;
   }
 
   @override
   void dispose() {
     _textTimer?.cancel();
+    _zoomTextTimer?.cancel();
     super.dispose();
   }
 
@@ -222,13 +218,13 @@ class _ImageViewerState extends State<ImageViewer> {
           valueListenable: widget.isZoomEnabled,
           builder: (context, zoomEnabled, _) => zoomEnabled
               ? InteractiveViewer(
-                  minScale: 0.5,
-                  maxScale: 4.0,
-                  child: _buildImageStack(),
-                )
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: _buildImageStack(),
+          )
               : _buildImageStack(),
         ),
-        
+
         if (!widget.hasDetections && !widget.showOverlay)
           Positioned.fill(
             child: Container(
@@ -240,7 +236,7 @@ class _ImageViewerState extends State<ImageViewer> {
               ),
             ),
           ),
-        
+
         // Left side controls
         Positioned(
           top: 10,
@@ -255,7 +251,7 @@ class _ImageViewerState extends State<ImageViewer> {
             ],
           ),
         ),
-        
+
         // Right side controls
         Positioned(
           top: 10,
@@ -271,7 +267,10 @@ class _ImageViewerState extends State<ImageViewer> {
                 valueListenable: widget.isZoomEnabled,
                 builder: (context, zoomEnabled, _) => _buildControlButton(
                   icon: zoomEnabled ? Icons.zoom_out_map : Icons.zoom_in_map,
-                  onPressed: () => widget.isZoomEnabled.value = !zoomEnabled,
+                  onPressed: () {
+                    widget.isZoomEnabled.value = !zoomEnabled;
+                    _showZoomStatus(widget.isZoomEnabled.value);
+                  },
                 ),
               ),
               if (widget.hasDetections && (widget.result['individual_predictions']?.length ?? 0) > 1) ...[
@@ -284,7 +283,8 @@ class _ImageViewerState extends State<ImageViewer> {
             ],
           ),
         ),
-        
+
+        // Detection change text
         Positioned(
           bottom: 40,
           left: 0,
@@ -293,24 +293,53 @@ class _ImageViewerState extends State<ImageViewer> {
             duration: const Duration(milliseconds: 300),
             child: _showImageText && widget.hasDetections && (widget.result['individual_predictions']?.length ?? 0) > 1
                 ? Container(
-                    key: ValueKey<int>(_currentImageIndex),
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      _currentImageIndex == -1
-                          ? "Full processed view"
-                          : "Detection ${_currentImageIndex + 1}/${widget.result['individual_predictions']?.length ?? 0}",
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
+              key: ValueKey<int>(_currentImageIndex),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _currentImageIndex == -1
+                    ? "Full processed view"
+                    : "Detection ${_currentImageIndex + 1}/${widget.result['individual_predictions']?.length ?? 0}",
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            )
                 : const SizedBox.shrink(),
           ),
         ),
-        
+
+        // Zoom toggle text with animation
+        Positioned(
+          bottom: 90,
+          left: 0,
+          right: 0,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            child: _showZoomText
+                ? Container(
+              key: ValueKey<String>(_zoomText),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 14),
+              margin: const EdgeInsets.symmetric(horizontal: 80),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                _zoomText,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+            )
+                : const SizedBox.shrink(),
+          ),
+        ),
+
         if (_showFeatures) _buildFeaturesOverlay(),
       ],
     );
