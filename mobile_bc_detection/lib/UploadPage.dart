@@ -75,10 +75,13 @@ class _UploadHomeState extends State<UploadHome> {
     Widget _buildSystemSelection(double screenWidth) {
     final font14 = responsiveFont(14, screenWidth);
     final font12 = responsiveFont(12, screenWidth);
-
+    final maxWidth = min(500.0,screenWidth); // Maximum width of 400px
     return Column(
+
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: [SizedBox( // Constrain the dropdown width
+          width: maxWidth,
+          child:
         DropdownButtonFormField<String>(
           value: _selectedSystem,
           decoration: InputDecoration(
@@ -114,12 +117,15 @@ class _UploadHomeState extends State<UploadHome> {
           },
           validator: (value) =>
               value == null ? 'Please select a mammogram system' : null,
-        ),
+        )),
         if (_showManualInput)
           Padding(
             padding: const EdgeInsets.only(top: 10.0),
-            child: TextFormField(
+            child: SizedBox(
+              width: maxWidth, 
+              child:TextFormField(
               controller: _pixelSizeController,
+
               style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
               decoration: InputDecoration(
                 labelText: 'Enter Pixel Size (mm)',
@@ -157,7 +163,7 @@ class _UploadHomeState extends State<UploadHome> {
                 return null;
               },
             ),
-          ),
+          )),
       ],
     );
   }

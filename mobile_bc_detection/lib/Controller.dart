@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart';
-
+import 'dart:io' show Platform;
 class Controller {
+
   static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
-    final uri = Uri.parse('http://localhost:8000/predict');
+    final uri = Uri.parse('http://${getBackendHost()}:8000/predict');
 
     var request = MultipartRequest('POST', uri)
       ..files.add(
@@ -35,9 +37,13 @@ class Controller {
           'full_image': base64Decode(jsonResponse['full_image']),
           'individual_predictions': (jsonResponse['individual_predictions'] as List)
               .map((pred) => {
-                    'image': base64Decode(pred['image']),
-                    'features': pred['features'],
-                  })
+            'image': base64Decode(pred['image']),
+            'features': pred['features'],
+            'label': pred['label'],           // New field
+            'classification': pred['classification'], // New field
+            'score': pred['score'],
+            'crop':base64Decode(pred['crop']),
+          })
               .toList()
         };
         
@@ -69,6 +75,17 @@ class Controller {
     } catch (e) {
       print('🔥 Error during email sending: $e');
       return null;
+    }
+  }
+
+  static String getBackendHost() {
+    if (kIsWeb) {
+      return 'localhost';
+    } else if (Platform.isAndroid) {
+      return '10.0.2.2';
+    } else {
+      // iOS simulator or real device (you might hardcode your LAN IP here)
+      return 'localhost';
     }
   }
 }

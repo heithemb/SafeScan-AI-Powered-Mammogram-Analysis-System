@@ -5,7 +5,7 @@ import cv2
 from PIL import Image
 import torch
 import io
-
+import matplotlib.pyplot as plt
 CUSTOM_CLASSES = ['calc', 'mass']
 COLOR = [(209, 109, 145),(0, 255, 255)]  # BGR color for boxes,mask and text
 CONTOUR_COLOR = [(0, 255, 255),(209, 109, 145)]  # BGR yellow for contours
@@ -217,18 +217,32 @@ def process_predictions(image_path: str, predictions: dict, pixel_spacing: float
                                  cv2.addWeighted(single_pred, 1, colored_mask, 0.3, 0),
                                  single_pred)
             cv2.drawContours(single_pred, contours, -1, color_c, 2)
-
+            
             # Encode individual image
             _, buffer = cv2.imencode('.jpg', cv2.cvtColor(single_pred, cv2.COLOR_RGB2BGR))
+            
+            pad = 100
+            x1 = max(0, xmin - pad)
+            y1 = max(0, ymin - pad)
+            x2 = min(image_width, xmax + pad)
+            y2 = min(image_height, ymax + pad)
+            crop = image_np[y1:y2, x1:x2]
+            # 2) Encode the crop
+            _, buf = cv2.imencode('.jpg', cv2.cvtColor(crop, cv2.COLOR_RGB2BGR))
+            
             output_data['individual_predictions'].append({
                 'image': base64.b64encode(buffer).decode('utf-8'),
-                'features': calculate_lesion_features(mask, image_np, pixel_spacing)
+                'label': CUSTOM_CLASSES[label-1],  # Add the label
+                'classification': cls_result,       # Add the classification result
+                'score': float(scores[i]),          # Add the score
+                'features': calculate_lesion_features(mask, image_np, pixel_spacing),
+                'crop':base64.b64encode(buf).decode('utf-8'),
             })
 
         # Encode full image
         _, buffer = cv2.imencode('.jpg', cv2.cvtColor(full_image, cv2.COLOR_RGB2BGR))
         output_data['full_image'] = base64.b64encode(buffer).decode('utf-8')
-
+        
         return {
             "full_image": output_data['full_image'],
             "individual_predictions": output_data['individual_predictions']

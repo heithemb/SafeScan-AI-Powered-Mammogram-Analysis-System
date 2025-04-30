@@ -28,12 +28,32 @@ Widget buildHeader(BuildContext context, double screenWidth) {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Flexible(
-          child: GestureDetector(
-            onTap: () {
-              // Simple navigation without scroll logic
-              if (ModalRoute.of(context)?.settings.name != '/') {
-                Navigator.popUntil(context, (route) => route.isFirst);
-                Future.delayed(const Duration(milliseconds: 100), () {
+
+
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                child:Text('SafeScan',
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFF27A9D),
+                  fontSize: font24,
+                  fontWeight: FontWeight.bold,
+                ),),
+                onPressed: () {
+                // Simple navigation without scroll logic
+                if (ModalRoute.of(context)?.settings.name != '/') {
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                  Future.delayed(const Duration(milliseconds: 100), () {
+                    if (AppKeys.landingPageKey.currentContext != null) {
+                      Scrollable.ensureVisible(
+                        AppKeys.landingPageKey.currentContext!,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  });
+                } else {
                   if (AppKeys.landingPageKey.currentContext != null) {
                     Scrollable.ensureVisible(
                       AppKeys.landingPageKey.currentContext!,
@@ -41,31 +61,13 @@ Widget buildHeader(BuildContext context, double screenWidth) {
                       curve: Curves.easeInOut,
                     );
                   }
-                });
-              } else {
-                if (AppKeys.landingPageKey.currentContext != null) {
-                  Scrollable.ensureVisible(
-                    AppKeys.landingPageKey.currentContext!,
-                    duration: const Duration(milliseconds: 500),
-                    curve: Curves.easeInOut,
-                  );
                 }
-              }
-            },
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'SafeScan',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFFF27A9D),
-                  fontSize: font24,
-                  fontWeight: FontWeight.bold,
-                ),
+              },
+
               ),
             ),
           ),
-        ),
+
         Flexible(
           child: FittedBox(
             fit: BoxFit.scaleDown,
