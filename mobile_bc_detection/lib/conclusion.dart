@@ -1,9 +1,11 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class ConclusionWidget extends StatefulWidget {
   final String messageContent;
   final Function(String)? onConfirm;
-  
+
   const ConclusionWidget({
     Key? key, 
     required this.messageContent,
@@ -41,6 +43,7 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
   }
 
   void _handleEditOrConfirm() {
+
     setState(() {
       if (_isEditable && widget.onConfirm != null) {
         widget.onConfirm!(_textController.text);
@@ -51,11 +54,14 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final maxWidth = min(700.0,MediaQuery.of(context).size.width);
     return Container(
       margin :  EdgeInsets.only(top:50),
 
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-      child: Column(
+      child: SizedBox(
+          width: maxWidth,
+          child:Column(
 
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -116,7 +122,7 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 }

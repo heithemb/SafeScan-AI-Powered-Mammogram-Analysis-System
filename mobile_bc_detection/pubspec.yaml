@@ -41,7 +41,7 @@ dependencies:
   share_plus: ^7.0.0
   universal_html: ^2.2.1 # Add this for better web compatibility
   intl: ^0.18.0
-
+  flutter_dotenv: ^5.1.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -76,6 +76,7 @@ flutter:
     - assets/bg2.jpg
     - assets/lottie/lottie_loading.json
     - assets/lottie/lottie_loading2.json
+    - .env
 
   #   - images/a_dot_ham.jpeg
 

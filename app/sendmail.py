@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 import smtplib
 from fastapi import Form, HTTPException  # Add this import at the top
 from pydantic import BaseModel, validator, EmailStr
-
+from config import Settings
 class EmailData(BaseModel):
     name: str
     email: EmailStr  # Special email validation
@@ -12,11 +12,11 @@ class EmailData(BaseModel):
     message: str
 
 
-def send_email(subject: str , email : str ,name: str  , message : str ,body: str , recipient_email: str):
+def send_email(subject: str , email : str ,name: str  , message : str ,body: str , recipient_email: str,settings:Settings):
     print("innnnnnnnn")
     try:
-        sender_email = "exemple.contact@gmail.com"
-        sender_password = "enter you application password"  # Use App Password
+        sender_email = settings.email
+        sender_password = settings.password  # Use App Password
        # Create the email message with HTML content
         msg = MIMEMultipart('alternative')
         msg['From'] = sender_email
@@ -113,11 +113,11 @@ def send_email(subject: str , email : str ,name: str  , message : str ,body: str
 
 
     
-def reply_email(subject: str , email : str ,name: str  , message : str  ):
+def reply_email(subject: str , email : str ,name: str  , message : str  ,settings:Settings):
     print("innnnnnnnn")
     try:
-        sender_email = "exemple.contact@gmail.com"
-        sender_password = "enter your application password"  # Use App Password
+        sender_email = settings.email
+        sender_password = settings.password  # Use App Password
        # Create the email message with HTML content
         msg = MIMEMultipart('alternative')
         msg['From'] = sender_email

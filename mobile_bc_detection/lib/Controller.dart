@@ -1,12 +1,13 @@
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart';
 import 'dart:io' show Platform;
 class Controller {
 
   static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
-    final uri = Uri.parse('http://${getBackendHost()}:8000/predict');
+    final uri = Uri.parse('${dotenv.env['BACKEND_URL']!}/predict');
 
     var request = MultipartRequest('POST', uri)
       ..files.add(
@@ -57,7 +58,7 @@ class Controller {
     }
   }
   static Future<Map<String, dynamic>?> sendEmail(Map<String, dynamic> formData) async {
-    final uri = Uri.parse('http://localhost:8000/send-email');
+    final uri = Uri.parse('${dotenv.env['BACKEND_URL']!}/send-email');
 
     try {
       final response = await post(
@@ -75,17 +76,6 @@ class Controller {
     } catch (e) {
       print('🔥 Error during email sending: $e');
       return null;
-    }
-  }
-
-  static String getBackendHost() {
-    if (kIsWeb) {
-      return 'localhost';
-    } else if (Platform.isAndroid) {
-      return '10.0.2.2';
-    } else {
-      // iOS simulator or real device (you might hardcode your LAN IP here)
-      return 'localhost';
     }
   }
 }

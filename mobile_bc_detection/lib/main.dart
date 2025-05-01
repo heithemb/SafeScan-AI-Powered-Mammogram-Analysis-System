@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'ContactUs.dart';
 import 'UploadPage.dart';
 import 'LandingPage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // main.dart
 import 'app_keys.dart';
-void main() {
+Future<void> main() async {
+  await dotenv.load(fileName: ".env");
   runApp(MyApp());
 }
 class MyApp extends StatelessWidget {

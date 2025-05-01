@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:mobile_bc_detection/conclusion.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
@@ -11,7 +12,9 @@ import 'package:universal_html/html.dart' as html;
 import 'header.dart';
 import 'uploadpage.dart';
 import 'image_viewer.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
+import 'generatepdf.dart';
+
 
 
 class ResultsPage extends StatefulWidget {
@@ -46,7 +49,7 @@ class _ResultsPageState extends State<ResultsPage>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
-            fetchConclusion(); 
+            fetchConclusion();
 
   }
 
@@ -83,7 +86,7 @@ String extractConclusion(String apiResponse) {
   // Find the first matching marker
   String? matchedMarker;
   int? markerPosition;
-  
+
   for (final marker in markers) {
     final pos = response.indexOf(marker);
     if (pos != -1) {
@@ -101,13 +104,13 @@ String extractConclusion(String apiResponse) {
 
   // Find where the next section starts (either new header or double newline)
   int endOfParagraph = textAfterMarker.length;
-  
+
   // Look for next header marker
   final nextHeaderMatch = RegExp(r'\*\*.+?\*\*:?').firstMatch(textAfterMarker);
   if (nextHeaderMatch != null) {
     endOfParagraph = nextHeaderMatch.start;
   }
-  
+
   // If no next header, look for first double newline
   final doubleNewlinePos = textAfterMarker.indexOf('\n\n');
   if (doubleNewlinePos != -1 && doubleNewlinePos < endOfParagraph) {
@@ -119,19 +122,19 @@ String extractConclusion(String apiResponse) {
 }
 
 Future<void> fetchConclusion() async {
-  const apiKey = '';
-  const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  
+  var apiKey = dotenv.env['API_KEY'];
+  var apiUrl = dotenv.env['API_URL'];
+
   String prompt;
-  
+
   if (!widget.hasDetections) {
     prompt = "Generate a professional and short medical report conclusion stating that no abnormalities were detected in the mammogram. by the way the abormalities can be  mass and/or calcification";
   } else {
     String findings = "";
-    
+
     for (var item in widget.result['individual_predictions']) {
       final features = item['features'];
-      findings += 
+      findings +=
           "The ${item['label']} has an opacity score of ${(item['score'] * 100).toStringAsFixed(1)}% "
           "and is classified as ${item['classification']}. Its features include "
           "an area of ${features['morphology']['area_mm2'].toStringAsFixed(2)} mm², "
@@ -139,13 +142,13 @@ Future<void> fetchConclusion() async {
           "an intensity of ${features['intensity']['mean'].toStringAsFixed(2)}, "
           "and a texture score of ${features['texture']['glcm_homogeneity'].toStringAsFixed(2)}. ";
     }
-    
+
     prompt = "Generate a professional and short medical report conclusion summarizing the following "
              "findings without repeating the characteristics: Mammography report shows: $findings "
              "Focus on the clinical interpretation, not the numbers. maximum 3 sentences.";
   }
 
-  
+
 
 
   final headers = {
@@ -164,8 +167,8 @@ Future<void> fetchConclusion() async {
   };
 
   try {
-    final response = await http.post(
-      Uri.parse(apiUrl),
+    final response = await post(
+      Uri.parse(apiUrl!),
       headers: headers,
       body: json.encode(requestBody),
     );
@@ -173,7 +176,7 @@ Future<void> fetchConclusion() async {
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
       final messageContent = responseData['choices'][0]['message']['content'];
-      
+
       setState(() {
         this.messageContent = extractConclusion(messageContent);
       });
@@ -198,78 +201,12 @@ Future<void> fetchConclusion() async {
     setState(() => _isGenerating = true);
 
     try {
-      final pdf = pw.Document();
-      final image = widget.hasDetections
-          ? pw.MemoryImage(widget.result['full_image'])
-          : pw.MemoryImage(widget.originalImageBytes);
-
-      // Get all predictions (or empty list)
-      final predictions = widget.hasDetections
-          ? widget.result['individual_predictions'] as List<dynamic>
-          : <dynamic>[];
-
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
-          build: (pw.Context context) {
-            final content = <pw.Widget>[];
-
-            // Header
-            content.add(_buildReportHeader());
-            content.add(pw.SizedBox(height: 20));
-
-            // Main image
-            content.add(
-              pw.Center(
-                child: pw.Container(
-                  padding: const pw.EdgeInsets.all(8),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey800),
-                  ),
-                  child: pw.Image(image,
-                      width: 500, height: 300, fit: pw.BoxFit.contain),
-                ),
-              ),
-            );
-            content.add(pw.SizedBox(height: 30));
-
-            // Detected opacities
-            content.add(_buildDetectedOpacitiesSection());
-            content.add(pw.SizedBox(height: 20));
-
-            // Detailed analysis and full table
-            if (widget.hasDetections) {
-              content.add(
-                pw.Text('DETAILED ANALYSIS OF OPACITIES',
-                    style: pw.TextStyle(
-                        fontSize: 14,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.grey600)),
-              );
-              content.add(pw.Divider(thickness: 0.5));
-              content.add(pw.SizedBox(height: 10));
-              // full table for all predictions
-              content.add(_buildPredictionsTable(predictions));
-              content.add(pw.SizedBox(height: 20));
-            }
-
-            // Conclusion always last
-            if (predictions.length == 2) {
-              content.add(pw.SizedBox(height: 60)); // Increased spacing
-            }
-
-            content.add(pw.Container(
-              child: _buildConclusionSection(),
-            ),
-            );
-
-            return content;
-          },
-        ),
+      final pdfBytes = await GeneratePdf.generate(
+        result: widget.result,
+        originalImageBytes: widget.originalImageBytes,
+        hasDetections: widget.hasDetections,
+        conclusion: messageContent,
       );
-
-      final pdfBytes = await pdf.save();
 
       if (kIsWeb) {
         final blob = html.Blob([pdfBytes]);
@@ -301,200 +238,51 @@ Future<void> fetchConclusion() async {
     }
   }
 
-  pw.Table _buildPredictionsTable(List<dynamic> predictions) {
-    final tableData = predictions.map<List<dynamic>>((prediction) {
-      try {
-        final features = prediction['features'] ?? {};
-        final morph = features['morphology'] ?? {};
-        final intensity = features['intensity'] ?? {};
-        final texture = features['texture'] ?? {};
 
-        final featuresString = [
-          if (morph['area_mm2'] != null)
-            'Area: ${morph['area_mm2']?.toStringAsFixed(2)}mm²',
-          if (morph['circularity'] != null)
-            'Circulation: ${morph['circularity']?.toStringAsFixed(2)}',
-          if (intensity['mean'] != null)
-            'Intensity: ${intensity['mean']?.toStringAsFixed(1)}',
-          if (texture['glcm_homogeneity'] != null)
-            'Homogeneity: ${texture['glcm_homogeneity']?.toStringAsFixed(2)}',
-        ].join(', ');
+  void _handleConclusionConfirmed(String newText) {
+    setState(() {
+      messageContent = newText;
+    });
+  }
 
-        final imageBytes = prediction['crop'] as Uint8List?;
-
-        return [
-          prediction['label'] ?? 'N/A',
-          '${((prediction['score'] ?? 0) * 100).toStringAsFixed(1)}%',
-          featuresString,
-          prediction['classification'] ?? 'N/A',
-          pw.ClipRRect(
-            horizontalRadius: 5,
-            verticalRadius: 5,
-            child: pw.Image(
-              pw.MemoryImage(imageBytes ?? Uint8List(0)),
-              width: 50,
-              height: 50,
+  Widget _buildBackButton(double screenWidth) {
+    return Container(
+      width: 130,
+      margin: const EdgeInsets.only(right: 2),
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(34, 0, 0, 0),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              bottomLeft: Radius.circular(20),
             ),
           ),
-        ];
-      } catch (_) {
-        return ['Error', 'N/A', 'Could not process', 'N/A', pw.SizedBox(width: 50, height: 50)];
-      }
-    }).toList();
-
-    return pw.TableHelper.fromTextArray(
-      border: null,
-      cellAlignment: pw.Alignment.centerLeft,
-      headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-      headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-      cellStyle: const pw.TextStyle(fontSize: 10),
-      headerAlignments: {
-        0: pw.Alignment.centerLeft,
-        1: pw.Alignment.center,
-        2: pw.Alignment.centerLeft,
-        3: pw.Alignment.center,
-        4: pw.Alignment.center,
-      },
-      columnWidths: {
-        0: const pw.FlexColumnWidth(2),
-        1: const pw.FlexColumnWidth(1),
-        2: const pw.FlexColumnWidth(3),
-        3: const pw.FlexColumnWidth(1),
-        4: const pw.FlexColumnWidth(2),
-      },
-      headers: ['Opacity', 'Score', 'Features', 'Class', 'Visualization'],
-      data: tableData,
-    );
-  }
-
-  pw.Widget _buildReportHeader() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('MAMMOGRAPHY DIAGNOSTIC REPORT',
-            style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey600)),
-        pw.Text('Supported by SafeScan system',
-            style: pw.TextStyle(
-                fontSize: 10,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey600)),
-        pw.Divider(thickness: 1),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(0, 40),
+        ),
+        onPressed: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => UploadHome()),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            pw.Text('Patient Name: Eliana Riversong',
-                style: const pw.TextStyle(fontSize: 12)),
-            pw.Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
-                style: const pw.TextStyle(fontSize: 12)),
+            const Icon(Icons.refresh, size: 18),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Upload More',
+                style: const TextStyle(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
-      ],
+      ),
     );
   }
-
-  pw.Widget _buildDetectedOpacitiesSection() {
-    int masscount = 0;
-    int calccount = 0;
-
-    if (widget.hasDetections) {
-      for (var prediction in widget.result['individual_predictions']) {
-        if (prediction['label'] == 'mass') {
-          masscount++;
-        } else if (prediction['label'] == 'calc') {calccount++;}
-      }
-    }
-
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('DETECTED OPACITIES',
-            style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey600)),
-        pw.Divider(thickness: 0.5),
-        pw.SizedBox(height: 10),
-        if (!widget.hasDetections)
-          pw.Text('No suspicious opacities detected',
-              style: const pw.TextStyle(fontSize: 12))
-        else
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              if (masscount > 0)
-                pw.Text('- $masscount ${masscount == 1 ? 'mass' : 'masses'}',
-                    style: const pw.TextStyle(fontSize: 12)),
-              if (calccount > 0)
-                pw.Text('- $calccount ${calccount == 1 ? 'calcification' : 'calcifications'}',
-                    style: const pw.TextStyle(fontSize: 12)),
-            ],
-          ),
-      ],
-    );
-  }
-
-  pw.Widget _buildConclusionSection() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('CONCLUSION',
-            style: pw.TextStyle(
-                fontSize: 14,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.grey600)),
-        pw.Divider(thickness: 0.5),
-        pw.SizedBox(height: 10),
-        pw.Wrap(
-          runSpacing: 8,
-          children: [
-           
-              pw.Text(messageContent,
-                  style: const pw.TextStyle(fontSize: 12)),
-          ],
-        ),
-      ],
-    );
-  }
-
-
-Widget _buildBackButton(double screenWidth) {
-  return Container(
-    width:  130,
-    margin: const EdgeInsets.only(right: 2), // Small gap on right
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(34, 0, 0, 0),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            bottomLeft: Radius.circular(20),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 16, // Horizontal padding
-          vertical: 12,   // Reduced vertical padding
-        ),
-        foregroundColor: Colors.white,
-        minimumSize: const Size(0, 40), // Compact height
-      ),
-      onPressed: () => Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => UploadHome()),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min, // Use minimum space
-        children: const [
-          Icon(Icons.refresh, size: 18), // Left-pointing arrow icon
-          SizedBox(width: 6), // Small gap between icon and text
-          Text('Upload More', style: TextStyle(fontSize: 14)), // Smaller text
-        ],
-      ),
-    ),
-  );
-}
 
 Widget _buildDownloadButton(double screenWidth) {
   return Container(
@@ -553,11 +341,10 @@ Widget _buildDownloadButton(double screenWidth) {
     );
   }
 
-void _handleConclusionConfirmed(String newText) {
-    setState(() {
-      messageContent = newText;
-    });
-  }
+
+
+
+
 
 
   @override
@@ -595,7 +382,6 @@ void _handleConclusionConfirmed(String newText) {
                          ), ),
                         _buildImageViewer(context),
                         ConclusionWidget(messageContent: messageContent, onConfirm: _handleConclusionConfirmed,),
-
                       ],
                     ),
                   ),

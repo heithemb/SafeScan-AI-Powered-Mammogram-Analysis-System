@@ -232,7 +232,7 @@ Widget _buildPredictionClassOverlay() {
     child: Center(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4.5, horizontal: 11),
-        margin: const EdgeInsets.only(bottom: -1),
+        margin: const EdgeInsets.only(bottom: 0),
         decoration: BoxDecoration(
           color: const Color.fromARGB(255, 43, 43, 43).withOpacity(0.7),
           borderRadius: BorderRadius.circular(4),
