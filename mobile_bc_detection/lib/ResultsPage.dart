@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:mobile_bc_detection/conclusion.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
@@ -9,6 +11,8 @@ import 'package:universal_html/html.dart' as html;
 import 'header.dart';
 import 'uploadpage.dart';
 import 'image_viewer.dart';
+import 'package:http/http.dart' as http;
+
 
 class ResultsPage extends StatefulWidget {
   final Map<String, dynamic> result;
@@ -150,7 +154,7 @@ Future<void> fetchConclusion() async {
   };
 
   final requestBody = {
-    "model": "deepseek/deepseek-prover-v2:free",
+    "model": "qwen/qwen2.5-vl-32b-instruct:free",
     "messages": [
       {
         "role": "user",
@@ -282,7 +286,7 @@ Future<void> fetchConclusion() async {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('PDF ready!'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color.fromARGB(255, 0, 0, 0),
         ),
       );
     } catch (e) {
@@ -446,13 +450,8 @@ Future<void> fetchConclusion() async {
         pw.Wrap(
           runSpacing: 8,
           children: [
-            if (!widget.hasDetections)
-              pw.Text(
-                  'The mammogram appears within normal limits with no evidence of suspicious opacities, masses, or calcification. Routine follow-up is recommended as per standard screening guidelines.',
-                  style: const pw.TextStyle(fontSize: 12))
-            else
-              pw.Text(
-                  'The mammogram demonstrates ${widget.result['individual_predictions'].length} suspicious opacity/opacities requiring further evaluation. Correlation with additional imaging and clinical findings is recommended.',
+           
+              pw.Text(messageContent,
                   style: const pw.TextStyle(fontSize: 12)),
           ],
         ),
@@ -485,7 +484,14 @@ Widget _buildBackButton(double screenWidth) {
         context,
         MaterialPageRoute(builder: (context) => UploadHome()),
       ),
-      child: const Text('Upload More', style: TextStyle(fontSize: 14)), // Smaller text
+      child: Row(
+        mainAxisSize: MainAxisSize.min, // Use minimum space
+        children: const [
+          Icon(Icons.refresh, size: 18), // Left-pointing arrow icon
+          SizedBox(width: 6), // Small gap between icon and text
+          Text('Upload More', style: TextStyle(fontSize: 14)), // Smaller text
+        ],
+      ),
     ),
   );
 }
@@ -547,10 +553,11 @@ Widget _buildDownloadButton(double screenWidth) {
     );
   }
 
-
-
-
-
+void _handleConclusionConfirmed(String newText) {
+    setState(() {
+      messageContent = newText;
+    });
+  }
 
 
   @override
@@ -587,6 +594,8 @@ Widget _buildDownloadButton(double screenWidth) {
                           ],
                          ), ),
                         _buildImageViewer(context),
+                        ConclusionWidget(messageContent: messageContent, onConfirm: _handleConclusionConfirmed,),
+
                       ],
                     ),
                   ),

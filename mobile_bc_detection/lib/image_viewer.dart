@@ -203,6 +203,53 @@ class _ImageViewerState extends State<ImageViewer> {
     return (widget.result['individual_predictions']?.length ?? 0) == 1 || _currentImageIndex != -1;
   }
 
+
+Widget _buildPredictionClassOverlay() {
+  // Don't show if no detections
+  if (!widget.hasDetections) return const SizedBox.shrink();
+
+  // Get the current prediction
+  Map<String, dynamic>? currentPrediction;
+  if (_currentImageIndex == -1) {
+    if ((widget.result['individual_predictions']?.length ?? 0) == 1) {
+      currentPrediction = widget.result['individual_predictions'][0];
+    }
+  } else {
+    currentPrediction = widget.result['individual_predictions'][_currentImageIndex];
+  }
+
+  // Don't show if no prediction to display
+  if (currentPrediction == null) return const SizedBox.shrink();
+
+  // Get the class text
+  final classText = currentPrediction['classification']?.toString() ?? 'Unknown';
+  final opacityText = currentPrediction['label']?.toString() ?? 'single';
+
+  return Positioned(
+    bottom: 0,
+    left: 0,
+    right: 0,
+    child: Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 4.5, horizontal: 11),
+        margin: const EdgeInsets.only(bottom: -1),
+        decoration: BoxDecoration(
+          color: const Color.fromARGB(255, 43, 43, 43).withOpacity(0.7),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          'Class of $opacityText opacity: $classText',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
   @override
   void dispose() {
     _textTimer?.cancel();
@@ -339,6 +386,7 @@ class _ImageViewerState extends State<ImageViewer> {
                 : const SizedBox.shrink(),
           ),
         ),
+          _buildPredictionClassOverlay(),
 
         if (_showFeatures) _buildFeaturesOverlay(),
       ],

@@ -40,17 +40,23 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
     super.dispose();
   }
 
-  void _handleConfirm() {
-    if (widget.onConfirm != null) {
-      widget.onConfirm!(_textController.text);
-    }
+  void _handleEditOrConfirm() {
+    setState(() {
+      if (_isEditable && widget.onConfirm != null) {
+        widget.onConfirm!(_textController.text);
+      }
+      _isEditable = !_isEditable;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
+      margin :  EdgeInsets.only(top:50),
+
       padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Column(
+
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -64,28 +70,12 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
                   color: Colors.white,
                 ),
               ),
-              Row(
-                children: [
-                  if (widget.onConfirm != null)
-                    TextButton(
-                      onPressed: _handleConfirm,
-                      child: const Text(
-                        'Confirm',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  IconButton(
-                    icon: Icon(
-                      _isEditable ? Icons.check : Icons.edit,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isEditable = !_isEditable;
-                      });
-                    },
-                  ),
-                ],
+              IconButton(
+                icon: Icon(
+                  _isEditable ? Icons.check : Icons.edit,
+                  color: Colors.white,
+                ),
+                onPressed: _handleEditOrConfirm,
               ),
             ],
           ),
@@ -93,9 +83,9 @@ class _ConclusionWidgetState extends State<ConclusionWidget> {
           Container(
             height: 130,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: const Color.fromARGB(255, 209, 115, 163).withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: const Color.fromARGB(255, 42, 2, 20).withOpacity(0.3)),
             ),
             child: Scrollbar(
               controller: _scrollController,
