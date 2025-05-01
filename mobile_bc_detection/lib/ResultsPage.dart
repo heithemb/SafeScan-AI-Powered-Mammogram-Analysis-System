@@ -32,6 +32,8 @@ class _ResultsPageState extends State<ResultsPage>
   late final AnimationController _animationController;
   bool _showOverlay = false;
   bool _isGenerating = false;
+  String messageContent = ""; // Store API response here
+  String req="";
 
   @override
   void initState() {
@@ -40,6 +42,8 @@ class _ResultsPageState extends State<ResultsPage>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
+            fetchConclusion(); 
+
   }
 
   @override
@@ -56,6 +60,135 @@ class _ResultsPageState extends State<ResultsPage>
           : _animationController.reverse();
     });
   }
+
+
+
+String extractConclusion(String apiResponse) {
+  // Trim the input first
+  final response = apiResponse.trim();
+  if (response.isEmpty) return response;
+
+  // Define possible conclusion markers
+  const markers = [
+    '**Conclusion:**',
+    '**Conclusion**',
+    'Conclusion:',
+    'Conclusion'
+  ];
+
+  // Find the first matching marker
+  String? matchedMarker;
+  int? markerPosition;
+  
+  for (final marker in markers) {
+    final pos = response.indexOf(marker);
+    if (pos != -1) {
+      matchedMarker = marker;
+      markerPosition = pos;
+      break;
+    }
+  }
+
+  // If no marker found, return the whole response
+  if (matchedMarker == null) return response;
+
+  // Extract text after the marker
+  final textAfterMarker = response.substring(markerPosition! + matchedMarker.length).trim();
+
+  // Find where the next section starts (either new header or double newline)
+  int endOfParagraph = textAfterMarker.length;
+  
+  // Look for next header marker
+  final nextHeaderMatch = RegExp(r'\*\*.+?\*\*:?').firstMatch(textAfterMarker);
+  if (nextHeaderMatch != null) {
+    endOfParagraph = nextHeaderMatch.start;
+  }
+  
+  // If no next header, look for first double newline
+  final doubleNewlinePos = textAfterMarker.indexOf('\n\n');
+  if (doubleNewlinePos != -1 && doubleNewlinePos < endOfParagraph) {
+    endOfParagraph = doubleNewlinePos;
+  }
+
+  // Extract and return the first paragraph
+  return textAfterMarker.substring(0, endOfParagraph).trim();
+}
+
+Future<void> fetchConclusion() async {
+  const apiKey = '';
+  const apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
+  
+  String prompt;
+  
+  if (!widget.hasDetections) {
+    prompt = "Generate a professional and short medical report conclusion stating that no abnormalities were detected in the mammogram. by the way the abormalities can be  mass and/or calcification";
+  } else {
+    String findings = "";
+    
+    for (var item in widget.result['individual_predictions']) {
+      final features = item['features'];
+      findings += 
+          "The ${item['label']} has an opacity score of ${(item['score'] * 100).toStringAsFixed(1)}% "
+          "and is classified as ${item['classification']}. Its features include "
+          "an area of ${features['morphology']['area_mm2'].toStringAsFixed(2)} mm², "
+          "a circularity of ${features['morphology']['circularity'].toStringAsFixed(2)}, "
+          "an intensity of ${features['intensity']['mean'].toStringAsFixed(2)}, "
+          "and a texture score of ${features['texture']['glcm_homogeneity'].toStringAsFixed(2)}. ";
+    }
+    
+    prompt = "Generate a professional and short medical report conclusion summarizing the following "
+             "findings without repeating the characteristics: Mammography report shows: $findings "
+             "Focus on the clinical interpretation, not the numbers. maximum 3 sentences.";
+  }
+
+  
+
+
+  final headers = {
+    'Authorization': 'Bearer $apiKey',
+    'Content-Type': 'application/json',
+  };
+
+  final requestBody = {
+    "model": "deepseek/deepseek-prover-v2:free",
+    "messages": [
+      {
+        "role": "user",
+        "content":prompt,
+      }
+    ]
+  };
+
+  try {
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: headers,
+      body: json.encode(requestBody),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      final messageContent = responseData['choices'][0]['message']['content'];
+      
+      setState(() {
+        this.messageContent = extractConclusion(messageContent);
+      });
+    } else {
+      setState(() {
+        messageContent = "Error: Failed to fetch conclusion (Status ${response.statusCode})";
+      });
+      print("Failed to fetch data from API. Status Code: ${response.statusCode}");
+    }
+  } catch (e) {
+    setState(() {
+      messageContent = "Error: ${e.toString()}";
+    });
+    print("Exception occurred: $e");
+  }
+}
+
+
+
 
   Future<void> _generateAndDownloadPdf() async {
     setState(() => _isGenerating = true);
@@ -327,31 +460,62 @@ class _ResultsPageState extends State<ResultsPage>
     );
   }
 
-  Widget _buildDownloadButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(121, 0, 0, 0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          foregroundColor: Colors.white,
+
+Widget _buildBackButton(double screenWidth) {
+  return Container(
+    width:  130,
+    margin: const EdgeInsets.only(right: 2), // Small gap on right
+    child: ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(34, 0, 0, 0),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+          ),
         ),
-        onPressed: _isGenerating ? null : _generateAndDownloadPdf,
-        icon: _isGenerating
-            ? const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        )
-            : const Icon(Icons.download, size: 20),
-        label: Text(
-          _isGenerating ? 'Generating...' : 'Download Prediction PDF',
-          style: const TextStyle(fontSize: 16),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16, // Horizontal padding
+          vertical: 12,   // Reduced vertical padding
         ),
+        foregroundColor: Colors.white,
+        minimumSize: const Size(0, 40), // Compact height
       ),
-    );
-  }
+      onPressed: () => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => UploadHome()),
+      ),
+      child: const Text('Upload More', style: TextStyle(fontSize: 14)), // Smaller text
+    ),
+  );
+}
+
+Widget _buildDownloadButton(double screenWidth) {
+  return Container(
+    width:130,
+    margin: const EdgeInsets.only(left: 2), // Small gap on left
+    child: ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color.fromARGB(35, 0, 0, 0),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topRight: Radius.circular(20),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12, // Reduced horizontal padding
+          vertical: 12,  // Reduced vertical padding
+        ),
+        foregroundColor: Colors.white,
+        minimumSize: const Size(0, 40), // Compact height
+      ),
+      onPressed: _generateAndDownloadPdf,
+      icon: const Icon(Icons.download, size: 18), // Smaller icon
+      label: const Text('Report PDF', style: TextStyle(fontSize: 14)), // Shorter label
+    ),
+  );
+}
 
   Widget _buildImageViewer(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -383,26 +547,11 @@ class _ResultsPageState extends State<ResultsPage>
     );
   }
 
-  Widget _buildBackButton() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color.fromARGB(121, 0, 0, 0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
-          foregroundColor: Colors.white,
-        ),
-        onPressed: () => Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => UploadHome(),
-          ),
-        ),
-        child: const Text('Back to Upload', style: TextStyle(fontSize: 16)),
-      ),
-    );
-  }
+
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -427,9 +576,17 @@ class _ResultsPageState extends State<ResultsPage>
                     child: Column(
                       children: [
                         buildHeader(context, screenWidth),
-                        _buildDownloadButton(),
+                         Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center, // Centers the pair
+                          mainAxisSize: MainAxisSize.min, // Makes row take minimum space
+                          children: [
+                            _buildBackButton(screenWidth),
+                            _buildDownloadButton(screenWidth),
+                          ],
+                         ), ),
                         _buildImageViewer(context),
-                        _buildBackButton(),
                       ],
                     ),
                   ),
