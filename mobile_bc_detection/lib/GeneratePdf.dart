@@ -11,6 +11,7 @@ class GeneratePdf {
     required Uint8List originalImageBytes,
     required bool hasDetections,
     required String conclusion,
+    required patientName,
   }) async {
     final pdf = pw.Document();
     final image = hasDetections
@@ -29,7 +30,7 @@ class GeneratePdf {
           final content = <pw.Widget>[];
 
           // Header
-          content.add(_buildReportHeader());
+          content.add(_buildReportHeader(patientName));
           content.add(pw.SizedBox(height: 20));
 
           // Main image
@@ -144,7 +145,7 @@ class GeneratePdf {
     );
   }
 
-  static pw.Widget _buildReportHeader() {
+  static pw.Widget _buildReportHeader(patientName) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -162,7 +163,7 @@ class GeneratePdf {
         pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text('Patient Name: Eliana Riversong',
+            pw.Text('Patient Name: $patientName',
                 style: const pw.TextStyle(fontSize: 12)),
             pw.Text('Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
                 style: const pw.TextStyle(fontSize: 12)),

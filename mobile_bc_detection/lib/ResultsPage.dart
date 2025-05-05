@@ -197,7 +197,7 @@ Future<void> fetchConclusion() async {
 
 
 
-  Future<void> _generateAndDownloadPdf() async {
+  Future<void> _generateAndDownloadPdf(name) async {
     setState(() => _isGenerating = true);
 
     try {
@@ -206,6 +206,7 @@ Future<void> fetchConclusion() async {
         originalImageBytes: widget.originalImageBytes,
         hasDetections: widget.hasDetections,
         conclusion: messageContent,
+        patientName:name,
       );
 
       if (kIsWeb) {
@@ -283,33 +284,91 @@ Future<void> fetchConclusion() async {
       ),
     );
   }
-
-Widget _buildDownloadButton(double screenWidth) {
-  return Container(
-    width:130,
-    margin: const EdgeInsets.only(left: 2), // Small gap on left
-    child: ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(35, 0, 0, 0),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topRight: Radius.circular(20),
-            bottomRight: Radius.circular(20),
+  final TextEditingController _nameController = TextEditingController();
+  void _showPatientNameDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color.fromARGB(255, 30, 30, 30), // Dark background
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Rounded corners
           ),
+          title: const Text(
+            'Enter Patient Name',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: TextField(
+            controller: _nameController,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'Patient Name',
+              hintStyle: TextStyle(color: Colors.white70),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white54),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.white),
+              ),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(35, 0, 0, 0), // Same as download button
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(35, 0, 0, 0), // Same as download button
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: () {
+                final name = _nameController.text.trim();
+                if (name.isNotEmpty) {
+                  Navigator.of(context).pop();
+                  _generateAndDownloadPdf(name);
+                }
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  Widget _buildDownloadButton(double screenWidth) {
+    return Container(
+      width: 130,
+      margin: const EdgeInsets.only(left: 2),
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(35, 0, 0, 0),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topRight: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          foregroundColor: Colors.white,
+          minimumSize: const Size(0, 40),
         ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12, // Reduced horizontal padding
-          vertical: 12,  // Reduced vertical padding
-        ),
-        foregroundColor: Colors.white,
-        minimumSize: const Size(0, 40), // Compact height
+        onPressed: _showPatientNameDialog,
+        icon: const Icon(Icons.download, size: 18),
+        label: const Text('Report PDF', style: TextStyle(fontSize: 14)),
       ),
-      onPressed: _generateAndDownloadPdf,
-      icon: const Icon(Icons.download, size: 18), // Smaller icon
-      label: const Text('Report PDF', style: TextStyle(fontSize: 14)), // Shorter label
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildImageViewer(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
