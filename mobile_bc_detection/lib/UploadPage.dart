@@ -195,7 +195,7 @@ class _UploadHomeState extends State<UploadHome> {
                               Icon(Icons.upload_file, size: 48, color: Colors.white),
                               const SizedBox(height: 10),
                               Text(
-                                'Upload Mammogram',
+                                'Scan Mammography',
                                 style: GoogleFonts.inter(color: Colors.white, fontSize: font16),
                               ),
                             ],

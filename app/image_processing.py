@@ -166,7 +166,7 @@ def process_predictions(image_path: str, predictions: dict, pixel_spacing: float
                 color_c=CONTOUR_COLOR[1]
             colored_mask[:] = color_tbm
             # Calculate text position
-            label_text = f"{cls_result} : {CUSTOM_CLASSES[label-1]} {scores[i]:.2f}"
+            label_text = f"{int(scores[i]*100)}% {CUSTOM_CLASSES[label-1]}"
             font = cv2.FONT_HERSHEY_DUPLEX
             font_scale = 1.6
             thickness = 2
