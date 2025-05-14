@@ -6,7 +6,7 @@ import 'package:http/http.dart';
 import 'dart:io' show Platform;
 class Controller {
 
-  static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes, double pixelSpacing) async {
+  static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes,String fileExt, double pixelSpacing) async {
     final uri = Uri.parse('${dotenv.env['BACKEND_URL']!}/predict');
 
     var request = MultipartRequest('POST', uri)
@@ -14,7 +14,7 @@ class Controller {
         MultipartFile.fromBytes(
           'file',
           imageBytes,
-          filename: 'mammogram.png',
+          filename: 'mammogram.${fileExt}',
         ),
       )
       // Add pixel spacing as a form field
@@ -29,12 +29,16 @@ class Controller {
         // Handle case where no detections were found
         if (jsonResponse is Map && jsonResponse['detections'] == false) {
 
-          return null;
+          return {
+            'detections': false,
+            'full_Normal_image': base64Decode(jsonResponse['full_Normal_image'])
+        };
         }
 
         // Process the full response
         return {
           'detections': true,
+          'full_Normal_image':base64Decode(jsonResponse['full_Normal_image']),
           'full_image': base64Decode(jsonResponse['full_image']),
           'individual_predictions': (jsonResponse['individual_predictions'] as List)
               .map((pred) => {

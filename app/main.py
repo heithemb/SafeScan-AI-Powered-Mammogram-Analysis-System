@@ -40,7 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ALLOWED_EXTENSIONS = {".dcm", ".png", ".jpg", ".jpeg"}
+ALLOWED_EXTENSIONS = {".dcm",".dicom", ".png", ".jpg", ".jpeg"}
 MAX_FILE_SIZE = 60 * 1024 * 1024  # 60 MB
 
 def convert_image_to_base64(image_stream: io.BytesIO) -> str:
@@ -52,7 +52,7 @@ async def predict_api(
     file: UploadFile = File(...),
     pixel_spacing: str = Form(None)
 ):
-    start_time = time.time()
+    print("Received file:", file.filename)
 
     # Parse pixel_spacing
     try:
@@ -80,7 +80,7 @@ async def predict_api(
         original_stream = io.BytesIO(content)
 
         # Convert DICOM if needed
-        if ext == ".dcm":
+        if ext in [".dcm", ".dicom"]:
             dicom_to_png(input_path, output_path)
             image_path = output_path
         else:
@@ -95,7 +95,7 @@ async def predict_api(
         return {
             "status": "success",
             "detections": False,
-            "full_image": convert_image_to_base64(original_stream)
+            "full_Normal_image": convert_image_to_base64(original_stream)
         }
     except Exception as e:
         raise HTTPException(500, str(e))

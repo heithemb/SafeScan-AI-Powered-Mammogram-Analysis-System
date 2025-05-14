@@ -171,12 +171,14 @@ Future<void> fetchConclusion() async {
       Uri.parse(apiUrl!),
       headers: headers,
       body: json.encode(requestBody),
-    );
 
+    );
+    debugPrint(prompt);
     if (response.statusCode == 200) {
       final responseData = json.decode(response.body);
-      final messageContent = responseData['choices'][0]['message']['content'];
 
+      final messageContent = responseData['choices'][0]['message']['content'];
+      debugPrint(messageContent);
       setState(() {
         this.messageContent = extractConclusion(messageContent);
       });

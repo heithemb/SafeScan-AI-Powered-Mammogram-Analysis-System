@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'Controller.dart';
@@ -16,13 +16,11 @@ class UploadHome extends StatefulWidget {
 class _UploadHomeState extends State<UploadHome> {
   Uint8List? _selectedImageBytes;
   bool _isLoading = false;
-  final ImagePicker _picker = ImagePicker();
- String? _selectedSystem;
+  String? _selectedSystem;
   bool _showManualInput = false;
+  String? _fileExtension;
   final TextEditingController _pixelSizeController = TextEditingController();
 
-
-  // List of mammogram systems with their pixel sizes in micrometers
   final List<Map<String, dynamic>> _mammogramSystems = [
     {'name': 'uMammo 890i', 'size': 0.0495},
     {'name': 'uMammo 590u', 'size': 0.076},
@@ -41,19 +39,15 @@ class _UploadHomeState extends State<UploadHome> {
 
   double _calculatePixelSpacing() {
     if (_selectedSystem == 'Other') {
-      // For "Other" option, use the manually entered value
       return double.tryParse(_pixelSizeController.text) ?? 0.0;
     } else {
-      // For predefined systems, find the selected system and return its size
       final system = _mammogramSystems.firstWhere(
-        (system) => system['name'] == _selectedSystem,
+            (system) => system['name'] == _selectedSystem,
         orElse: () => {'size': 0.0},
       );
       return system['size'] ?? 0.0;
     }
   }
-
-
 
   @override
   void dispose() {
@@ -61,114 +55,105 @@ class _UploadHomeState extends State<UploadHome> {
     super.dispose();
   }
 
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'dcm', 'dicom'],
+    );
 
-  
-  Future<void> _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      final bytes = await pickedFile.readAsBytes();
-      setState(() => _selectedImageBytes = bytes);
+    if (result != null && result.files.single.bytes != null) {
+      setState(() {
+        _selectedImageBytes = result.files.single.bytes;
+        _fileExtension = result.files.single.extension?.toLowerCase();
+      });
     }
   }
 
-
-    Widget _buildSystemSelection(double screenWidth) {
+  Widget _buildSystemSelection(double screenWidth) {
     final font14 = responsiveFont(14, screenWidth);
     final font12 = responsiveFont(12, screenWidth);
-    final maxWidth = min(500.0,screenWidth); // Maximum width of 400px
-    return Column(
+    final maxWidth = min(500.0, screenWidth);
 
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [SizedBox( // Constrain the dropdown width
+      children: [
+        SizedBox(
           width: maxWidth,
-          child:
-        DropdownButtonFormField<String>(
-          value: _selectedSystem,
-          decoration: InputDecoration(
-            labelText: 'Select Mammogram System',
-            labelStyle: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: font14,
+          child: DropdownButtonFormField<String>(
+            value: _selectedSystem,
+            decoration: InputDecoration(
+              labelText: 'Select Mammogram System',
+              labelStyle: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Colors.white),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: Color(0xFFD16D91)),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              filled: true,
+              fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Colors.white),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: Color(0xFFD16D91)),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            filled: true,
-            fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
+            dropdownColor: const Color(0xFF1A1A1A).withOpacity(0.9),
+            style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+            items: _mammogramSystems.map((system) {
+              return DropdownMenuItem<String>(
+                value: system['name'],
+                child: Text(system['name']),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedSystem = value;
+                _showManualInput = value == 'Other';
+              });
+            },
+            validator: (value) =>
+            value == null ? 'Please select a mammogram system' : null,
           ),
-          dropdownColor: const Color(0xFF1A1A1A).withOpacity(0.9),
-          style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
-          items: _mammogramSystems.map((system) {
-            return DropdownMenuItem<String>(
-              value: system['name'],
-              child: Text(system['name']),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() {
-              _selectedSystem = value;
-              _showManualInput = value == 'Other';
-            });
-          },
-          validator: (value) =>
-              value == null ? 'Please select a mammogram system' : null,
-        )),
+        ),
         if (_showManualInput)
           Padding(
             padding: const EdgeInsets.only(top: 10.0),
             child: SizedBox(
-              width: maxWidth, 
-              child:TextFormField(
-              controller: _pixelSizeController,
-
-              style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
-              decoration: InputDecoration(
-                labelText: 'Enter Pixel Size (mm)',
-                labelStyle: GoogleFonts.inter(
-                  color: Colors.white,
-                  fontSize: font14,
+              width: maxWidth,
+              child: TextFormField(
+                controller: _pixelSizeController,
+                style: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+                decoration: InputDecoration(
+                  labelText: 'Enter Pixel Size (mm)',
+                  labelStyle: GoogleFonts.inter(color: Colors.white, fontSize: font14),
+                  hintText: 'e.g., 0.1',
+                  hintStyle: GoogleFonts.inter(color: Colors.white54, fontSize: font12),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Color(0xFFD16D91)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
                 ),
-                hintText: 'e.g., 0.1',
-                hintStyle: GoogleFonts.inter(
-                  color: Colors.white54,
-                  fontSize: font12,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.white),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Color(0xFFD16D91)),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                filled: true,
-                fillColor: const Color(0xFF1A1A1A).withOpacity(0.7),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (_selectedSystem == 'Other' && (value == null || value.isEmpty)) {
+                    return 'Please enter pixel size';
+                  }
+                  if (value != null && value.isNotEmpty && double.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (_selectedSystem == 'Other' &&
-                    (value == null || value.isEmpty)) {
-                  return 'Please enter pixel size';
-                }
-                if (value != null &&
-                    value.isNotEmpty &&
-                    double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
             ),
-          )),
+          ),
       ],
     );
   }
 
-  // Update your build method to include the system selection
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -180,15 +165,12 @@ class _UploadHomeState extends State<UploadHome> {
       body: SizedBox.expand(
         child: Stack(
           children: [
-            // Background layers (keep existing)
             Positioned.fill(
               child: Image.asset('assets/bg2.jpg', fit: BoxFit.cover),
             ),
             Positioned.fill(
-            child: Container(color: const Color.fromARGB(150, 42, 14, 24)),
+              child: Container(color: const Color.fromARGB(150, 42, 14, 24)),
             ),
-
-            // Main content
             SafeArea(
               child: SingleChildScrollView(
                 child: Column(
@@ -197,7 +179,7 @@ class _UploadHomeState extends State<UploadHome> {
                     const SizedBox(height: 60),
                     Center(
                       child: GestureDetector(
-                        onTap: _pickImage,
+                        onTap: _pickFile,
                         child: Container(
                           width: boxSize,
                           height: boxSize,
@@ -208,29 +190,37 @@ class _UploadHomeState extends State<UploadHome> {
                           alignment: Alignment.center,
                           child: _selectedImageBytes == null
                               ? Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.upload_file,
-                                        size: 48, color: Colors.white),
-                                    const SizedBox(height: 10),
-                                    Text(
-                                      'Upload Mammogram',
-                                      style: GoogleFonts.inter(
-                                        color: Colors.white,
-                                        fontSize: font16,
-                                      ),
-                                    ),
-                                  ],
-                                )
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.upload_file, size: 48, color: Colors.white),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Upload Mammogram',
+                                style: GoogleFonts.inter(color: Colors.white, fontSize: font16),
+                              ),
+                            ],
+                          )
+                              : (_fileExtension == 'dcm' || _fileExtension == 'dicom')
+                              ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.description, size: 48, color: Colors.white),
+                              const SizedBox(height: 10),
+                              Text(
+                                'DICOM file uploaded',
+                                style: GoogleFonts.inter(color: Colors.white, fontSize: font16),
+                              ),
+                            ],
+                          )
                               : ClipRRect(
-                                  borderRadius: BorderRadius.circular(15),
-                                  child: Image.memory(
-                                    _selectedImageBytes!,
-                                    width: boxSize,
-                                    height: boxSize,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                            borderRadius: BorderRadius.circular(15),
+                            child: Image.memory(
+                              _selectedImageBytes!,
+                              width: boxSize,
+                              height: boxSize,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -245,62 +235,44 @@ class _UploadHomeState extends State<UploadHome> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromARGB(121, 0, 0, 0),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20)),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 60, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
                         ),
                         onPressed: () async {
                           if (_selectedSystem == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Please select a mammogram system',
-                                  style: GoogleFonts.inter(),
-                                ),
-                                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            );
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Please select a mammogram system', style: GoogleFonts.inter()),
+                              backgroundColor: Colors.black,
+                            ));
                             return;
                           }
                           if (_selectedSystem == 'Other' &&
-                              (_pixelSizeController.text.isEmpty ||
-                                  double.tryParse(
-                                          _pixelSizeController.text) ==
-                                      null)) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Please enter a valid pixel spacing',
-                                  style: GoogleFonts.inter(),
-                                ),
-                                backgroundColor: const Color.fromARGB(255, 0, 0, 0),
-                              ),
-                            );
+                              (_pixelSizeController.text.isEmpty || double.tryParse(_pixelSizeController.text) == null)) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Please enter a valid pixel spacing', style: GoogleFonts.inter()),
+                              backgroundColor: Colors.black,
+                            ));
                             return;
                           }
 
                           setState(() => _isLoading = true);
                           final pixelSpacing = _calculatePixelSpacing();
-                          final result = await Controller.uploadImage(
-                              _selectedImageBytes!, pixelSpacing);
+                          final result = await Controller.uploadImage(_selectedImageBytes!,_fileExtension!, pixelSpacing);
                           setState(() => _isLoading = false);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ResultsPage(
-                                originalImageBytes: _selectedImageBytes!,
-                                result: result ?? {},
-                                hasDetections: result != null,
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ResultsPage(
+                                  originalImageBytes: result?['full_Normal_image']!,
+                                  result: result ?? {},
+                                  hasDetections: result?['detections'],
+                                ),
                               ),
-                            ),
-                          );
+                            );
+
                         },
-                        child: Text(
-                          'Send',
-                          style: GoogleFonts.inter(
-                              fontSize: font16, color: Colors.white),
-                        ),
+                        child: Text('Send', style: GoogleFonts.inter(fontSize: font16, color: Colors.white)),
                       ),
                       const SizedBox(height: 20),
                     ],
@@ -308,15 +280,12 @@ class _UploadHomeState extends State<UploadHome> {
                 ),
               ),
             ),
-
-            // Loading overlay (keep existing)
             if (_isLoading)
               Positioned.fill(
                 child: Container(
                   color: Colors.black.withOpacity(0.77),
                   child: Center(
-                    child: Lottie.asset('assets/lottie/lottie_loading2.json',
-                        width: 320, height: 320),
+                    child: Lottie.asset('assets/lottie/lottie_loading2.json', width: 320, height: 320),
                   ),
                 ),
               ),

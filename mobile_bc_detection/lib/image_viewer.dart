@@ -88,11 +88,24 @@ class _ImageViewerState extends State<ImageViewer> {
   }
 
   Widget _buildImageStack() {
-    Uint8List currentImage = widget.hasDetections
-        ? (_currentImageIndex == -1
-        ? widget.result["full_image"]
-        : widget.result['individual_predictions'][_currentImageIndex]['image'])
-        : widget.originalImageBytes;
+    Uint8List currentImage;
+    if (widget.hasDetections) {
+      if (_currentImageIndex == -1) {
+        currentImage = widget.result["full_image"] ?? widget.originalImageBytes;
+      } else {
+        final individualPreds = widget.result['individual_predictions'];
+        if (individualPreds != null &&
+            _currentImageIndex >= 0 &&
+            _currentImageIndex < individualPreds.length &&
+            individualPreds[_currentImageIndex]['image'] != null) {
+          currentImage = individualPreds[_currentImageIndex]['image'];
+        } else {
+          currentImage = widget.originalImageBytes;
+        }
+      }
+    } else {
+      currentImage = widget.originalImageBytes;
+    }
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 500),

@@ -149,6 +149,7 @@ def process_predictions(image_path: str, predictions: dict, pixel_spacing: float
 
         output_data = {'full_image': None, 'individual_predictions': []}
         full_image = image_np.copy()
+        _, Normbuffer = cv2.imencode('.jpg', cv2.cvtColor(full_image, cv2.COLOR_RGB2BGR))
         image_height, image_width = image_np.shape[:2]
         colored_mask = np.zeros_like(image_np)
         
@@ -245,6 +246,8 @@ def process_predictions(image_path: str, predictions: dict, pixel_spacing: float
         
         return {
             "full_image": output_data['full_image'],
+            "detections": True,
+            "full_Normal_image":base64.b64encode(Normbuffer).decode('utf-8'),
             "individual_predictions": output_data['individual_predictions']
         }
 

@@ -46,11 +46,17 @@ def load_model():
     model = MaskRCNN(
         backbone=backbone_with_fpn,
         num_classes=num_classes,
-        min_size=800,
-        max_size=1333
+        min_size=957,
+        max_size=1147
     )
+    model.rpn.anchor_generator.sizes = [
+    67.5, 126.1, 191.9, 277.5, 407.9
+        ]
+    model.rpn.anchor_generator.aspect_ratios = [
+        (0.5,1.0,2.0),
+        ] * len(model.rpn.anchor_generator.sizes)
 
-    model.load_state_dict(torch.load(r"models\MaskRcnn+convnext_bestMap.pth", map_location=device))
+    model.load_state_dict(torch.load(r"models\MaskRcnn_bestmapkmeans.pth", map_location=device))
     return model.to(device)
 
 def predict(image_path: str, model):
