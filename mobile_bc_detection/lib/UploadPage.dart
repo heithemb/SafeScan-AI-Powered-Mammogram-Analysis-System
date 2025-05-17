@@ -56,9 +56,11 @@ class _UploadHomeState extends State<UploadHome> {
   }
 
   Future<void> _pickFile() async {
+    try {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['jpg', 'jpeg', 'png', 'dcm', 'dicom'],
+      withData: true,
     );
 
     if (result != null && result.files.single.bytes != null) {
@@ -66,8 +68,13 @@ class _UploadHomeState extends State<UploadHome> {
         _selectedImageBytes = result.files.single.bytes;
         _fileExtension = result.files.single.extension?.toLowerCase();
       });
+    } else {
+      debugPrint('File picking cancelled or no data returned');
     }
-  }
+  } catch (e, stack) {
+  debugPrint('Error picking file: $e\n$stack');
+}
+}
 
   Widget _buildSystemSelection(double screenWidth) {
     final font14 = responsiveFont(14, screenWidth);

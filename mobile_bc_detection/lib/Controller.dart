@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart';
-import 'dart:io' show Platform;
 class Controller {
 
   static Future<Map<String, dynamic>?> uploadImage(Uint8List imageBytes,String fileExt, double pixelSpacing) async {
@@ -14,7 +13,7 @@ class Controller {
         MultipartFile.fromBytes(
           'file',
           imageBytes,
-          filename: 'mammogram.${fileExt}',
+          filename: 'mammogram.$fileExt',
         ),
       )
       // Add pixel spacing as a form field
