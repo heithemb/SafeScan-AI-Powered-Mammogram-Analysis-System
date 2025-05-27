@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 from PIL import Image
 import torch
-import io
+from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
 CUSTOM_CLASSES = ['calc', 'mass']
 COLOR = [(209, 109, 145),(0, 255, 255)]  # BGR color for boxes,mask and text
@@ -35,33 +35,28 @@ def draw_rounded_rectangle(img, top_left, bottom_right, color, corner_radius=10,
 
 
 def calculate_lesion_features(mask, image, pixel_spacing, min_area_px=10):
-    from skimage.color import rgb2gray
+    
 
     # If image has 3 channels, convert to grayscale
     if image.ndim == 3 and image.shape[2] == 3:
         image = rgb2gray(image)
-    if image.ndim == 3 and image.shape[2] == 3:
-        mask = rgb2gray(mask)
     # 1) Clean & label mask
     bin_mask = morphology.remove_small_objects(mask.astype(bool), min_size=min_area_px)
     labeled = measure.label(bin_mask)
-    regions = measure.regionprops(labeled, intensity_image=image)
+    region = measure.regionprops(labeled, intensity_image=image)[0]
 
-    # 2) Find the largest valid region
-    regions = [r for r in regions if r.area >= min_area_px]
-    if not regions:
-        return None
-    region = max(regions, key=lambda r: r.area)
-    
+
     
     # 3) Morphology (real-world units)
-    area_mm2 = region.area * (pixel_spacing[0] * pixel_spacing[1])
+    area_mm2 = region.area * (pixel_spacing **2)
     
     
-    perimeter_px = perimeter_crofton(region.image, directions=2)  # From skimage.measure
+    perimeter_px = perimeter_crofton(region.image, directions=4)# the perimeter is estimated by counting how many times 
+                                                                #a set of lines in different directions intersect the boundary of the object.direction=4=[0, 45, 90, 135 ]°  
+                                                                # From skimage.measure
     
     
-    perim_mm = perimeter_px * np.mean(pixel_spacing)
+    perim_mm = perimeter_px * pixel_spacing
     print ('here')
     circularity = (4 * np.pi * area_mm2) / (perim_mm ** 2) if perim_mm > 0 else 0.0
     print ('here')
@@ -123,7 +118,7 @@ def calculate_lesion_features(mask, image, pixel_spacing, min_area_px=10):
 def process_predictions(image_path: str, predictions: dict, pixel_spacing: float = None, confidence_threshold=0.5):
     try:
 
-        pixel_spacing=(pixel_spacing,pixel_spacing)
+        
         print(pixel_spacing)
         # Load and convert image
         with Image.open(image_path) as img:

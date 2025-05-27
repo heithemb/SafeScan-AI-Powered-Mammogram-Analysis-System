@@ -2,9 +2,6 @@ import base64
 import io
 import os
 import uuid
-import time
-import datetime
-import smtplib
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,8 +32,8 @@ classifier = load_classifier()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["POST"],
     allow_headers=["*"],
 )
 
@@ -50,7 +47,7 @@ def convert_image_to_base64(image_stream: io.BytesIO) -> str:
 @app.post("/predict")
 async def predict_api(
     file: UploadFile = File(...),
-    pixel_spacing: str = Form(None)
+    pixel_spacing: str = Form(...)
 ):
     print("Received file:", file.filename)
 
@@ -75,16 +72,20 @@ async def predict_api(
     output_path = os.path.join(temp_dir, f"{uuid.uuid4()}.png")
 
     try:
+        # Save the uploaded file to a temporary location
         with open(input_path, "wb") as f:
             f.write(content)
-        original_stream = io.BytesIO(content)
+        
 
         # Convert DICOM if needed
         if ext in [".dcm", ".dicom"]:
             dicom_to_png(input_path, output_path)
             image_path = output_path
+            with open(output_path, "rb") as f:
+                original_stream = io.BytesIO(f.read())
         else:
             image_path = input_path
+            original_stream = io.BytesIO(content)
 
         results = predict(image_path, model)
         if results['boxes']:

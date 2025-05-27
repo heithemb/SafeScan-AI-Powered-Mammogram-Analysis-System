@@ -16,3 +16,4 @@ torch
 torchvision
 python-dotenv
 pydantic-settings
+email-validator

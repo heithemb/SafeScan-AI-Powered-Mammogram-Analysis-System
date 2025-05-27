@@ -1,6 +1,7 @@
 import torch
 from torchvision.models.detection import maskrcnn_resnet50_fpn
 from PIL import Image
+import os
 import torchvision.transforms as T
 import torchvision
 from torchvision.models.detection import MaskRCNN
@@ -56,7 +57,8 @@ def load_model():
         (0.5,1.0,2.0),
         ] * len(model.rpn.anchor_generator.sizes)
 
-    model.load_state_dict(torch.load(r"models\MaskRcnn_bestmapkmeans.pth", map_location=device))
+    model.load_state_dict(torch.load(os.path.join("models","MaskRcnn_bestmapkmeans.pth"), map_location=device))
+    
     return model.to(device)
 
 def predict(image_path: str, model):

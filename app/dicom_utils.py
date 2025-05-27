@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 
 def dicom_to_png(dicom_path: str, output_path: str) -> None:
-    """Convert DICOM to PNG and normalize pixel values."""
+    """Convert DICOM to PNG and normalization: convertion to 8bit images."""
     print("dicom {dicom_path}")
     ds = dcmread(dicom_path)
     img_array = ds.pixel_array.astype(float)

@@ -1,25 +1,26 @@
 import numpy as np
 import joblib
-from PIL import Image
 import cv2
 import os
 from sklearn.preprocessing import StandardScaler
 from keras.applications.densenet import DenseNet121, preprocess_input as dpi
 from keras.applications.convnext import ConvNeXtTiny, preprocess_input as cpi
 import matplotlib.pyplot as plt
-
+import torch
+if torch.cuda.is_available()==False:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 # Load models and scaler once at startup
 print("Loading models and scaler...")
 model_densenet = DenseNet121(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 model_convnext = ConvNeXtTiny(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
-scaler = joblib.load(r"models\scaler.joblib")
+scaler =  joblib.load(os.path.join("models", "scaler.joblib"))
 
 # Constants
 CROP_SIZES = [112, 224, 512, 750, 1024, 1500]  # Defined once for smart_crop_from_box
 
 def load_classifier():
     print('Loading classifier model...')
-    return joblib.load(r"models\svm+lgbmdensenet+convnexttiny+9720+c=6+k=sigmoid+augmentation.pkl")
+    return joblib.load(os.path.join("models","svm+lgbmdensenet+convnexttiny+9720+c=6+k=sigmoid+augmentation.pkl"))
 
 def smart_crop_from_box(orig_cv, box, target_size=224):
     height, width = orig_cv.shape[:2]
