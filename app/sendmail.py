@@ -5,26 +5,29 @@ import smtplib
 from fastapi import Form, HTTPException  # Add this import at the top
 from pydantic import BaseModel, validator, EmailStr
 from config import Settings
+# Pydantic model to validate the structure of email input data
 class EmailData(BaseModel):
     name: str
-    email: EmailStr  # Special email validation
+    email: EmailStr  # Validates that this field is a proper email
     subject: str
     message: str
 
 
-def send_email(subject: str , email : str ,name: str  , message : str ,body: str , recipient_email: str,settings:Settings):
+# Function to send an email to the SafeScan team
+def send_email(subject: str, email: str, name: str, message: str, body: str, recipient_email: str, settings: Settings):
     print("innnnnnnnn")
     try:
+        # Sender credentials from settings
         sender_email = settings.email
-        sender_password = settings.password  # Use App Password
-       # Create the email message with HTML content
+        sender_password = settings.password  # App-specific password for Gmail
+
+        # Compose email with HTML content
         msg = MIMEMultipart('alternative')
         msg['From'] = sender_email
         msg['To'] = recipient_email
         msg['Subject'] = f"SafeScan Contact: {subject}"
 
-
-        # HTML email template
+        # HTML template for the email body
         html = f"""
         <!DOCTYPE html>
         <html>
@@ -100,12 +103,13 @@ def send_email(subject: str , email : str ,name: str  , message : str ,body: str
         msg.attach(part1)
         msg.attach(part2)
 
-        # Send email
+        # Send the email using Gmail's SMTP server over SSL
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, recipient_email, msg.as_string())
 
     except Exception as e:
+        # Return a 500 Internal Server Error with exception message if sending fails
         raise HTTPException(status_code=500, detail=f"Error sending email: {str(e)}")
     
 
@@ -114,7 +118,6 @@ def send_email(subject: str , email : str ,name: str  , message : str ,body: str
 
     
 def reply_email(subject: str , email : str ,name: str  , message : str  ,settings:Settings):
-    print("innnnnnnnn")
     try:
         sender_email = settings.email
         sender_password = settings.password  # Use App Password

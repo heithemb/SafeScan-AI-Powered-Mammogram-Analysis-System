@@ -2,6 +2,7 @@ import torch
 from torchvision.models.detection import maskrcnn_resnet50_fpn
 from PIL import Image
 import os
+import numpy as np
 import torchvision.transforms as T
 import torchvision
 from torchvision.models.detection import MaskRCNN
@@ -88,31 +89,7 @@ def predict(image_path: str, model):
         raise
     print('Inference completed successfully')
 
-    # Check prediction output structure
 
-    """# Try to draw the bounding box
-    try:
-        from PIL import ImageDraw
-
-        # Open the image again (since ImageDraw modifies the original image)
-        draw = ImageDraw.Draw(img)
-        bbox = prediction[0]['boxes'][0].cpu().numpy()
-        
-        # Ensure bbox is valid
-        print(f"Bounding box coordinates: {bbox}")
-        if bbox is not None and len(bbox) == 4:
-            # Draw bounding box
-            draw.rectangle([bbox[0], bbox[1], bbox[2], bbox[3]], outline="red", width=3)
-
-        # Show the image with bounding box
-        img.show()
-        import matplotlib.pyplot as plt
-        mask = prediction[0]['masks'][0, 0].cpu().numpy()
-        plt.imshow(mask, cmap='gray')
-        plt.show()
-    except Exception as e:
-        print(f"Error during drawing bounding box: {e}")
-        raise"""
     try:
         confidence_threshold = 0.5
         high_conf_indices = prediction[0]['scores'] > confidence_threshold
@@ -143,13 +120,6 @@ def predict(image_path: str, model):
     except Exception as e:
             print(f"Error during merging masks: {e}")
             raise
-    """return {
-        "boxes": prediction[0]['boxes'][high_conf_indices].cpu().numpy(),
-        "labels": prediction[0]['labels'][high_conf_indices].cpu().numpy(),
-        "scores":prediction[0]['scores'][high_conf_indices].cpu().numpy(),
-        "masks": prediction[0]['masks'][high_conf_indices].cpu().numpy()
-        }"""
-import numpy as np
 
 def calculate_iou(mask1, mask2):
     """Calculate Intersection over Union between two binary masks."""
