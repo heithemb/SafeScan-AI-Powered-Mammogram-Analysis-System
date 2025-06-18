@@ -2,13 +2,13 @@
 This repository is part of a research project aimed at enhancing the detection of masses and calcifications in mammography. It contains the most effective combination of models and tools developed during the project.
 
 # What’s Inside
- Detection & Segmentation
+ Detection & Segmentation: 
 Code for training and running a Mask R-CNN model to detect and segment breast abnormalities.
 
- Classification
+ Classification: 
 An SVM model that classifies the segmented regions (e.g., benign or malignant).
 
- Mobile User Interface
+ Mobile User Interface: 
 A Flutter application called SafeScan, which allows radiologists to:
 
 Upload mammography images in DICOM, PNG, JPG, or JPEG formats
