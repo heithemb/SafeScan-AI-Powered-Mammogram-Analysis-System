@@ -1,4 +1,4 @@
-****** SafeScan: AI-Powered Mammogram Analysis System ******
+# SafeScan: AI-Powered Mammogram Analysis System
 This repository is part of a research project aimed at enhancing the detection of masses and calcifications in mammography. It contains the most effective combination of models and tools developed during the project.
 
 # What’s Inside
