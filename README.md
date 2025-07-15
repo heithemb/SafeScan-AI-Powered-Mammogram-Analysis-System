@@ -42,3 +42,6 @@ This system is intended as a research prototype and is not approved for clinical
 # Authors
 This project was developed as an end-of-study research project by:
 Noor MEZNI and Heithem BENMOUSSA
+
+# Contact
+mezniinoor@gmail.com & Heithem.benmoussa.71@gmail.com
