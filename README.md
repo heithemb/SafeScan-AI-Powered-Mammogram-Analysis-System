@@ -28,6 +28,7 @@ The SVM classifier was trained using a combination of CMMD and CBIS-DDSM dataset
 
 Dataset links (via Roboflow and TCIA) are provided in the training scripts.
 
+To access the models send a request via this link: https://drive.google.com/drive/folders/1zvw5nNOgdjQJEa5JWGL5O-J2lhX2ylf_?usp=sharing
 # Setup Instructions
 To run the project, you must configure two environment files:
 
