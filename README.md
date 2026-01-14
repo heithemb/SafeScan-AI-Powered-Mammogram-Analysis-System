@@ -25,7 +25,7 @@ A Flutter application called *SafeScan*, which allows radiologists to:
 - The **SVM classifier** was trained using a combination of the CMMD and CBIS-DDSM datasets.  
 - Dataset links (via Roboflow and TCIA) are included in the training scripts.  
 - To access the trained models, submit a request using the following link:  
-  [Model Access – Google Drive](https://drive.google.com/drive/folders/1zvw5nNOgdjQJEa5JWGL5O-J2lhX2ylf_?usp=sharing)
+  [Model Access – Google Drive](https://drive.google.com/drive/folders/1Ab1ph22n9X8ICr8eg4Jdx0mJ1iVrvNmf?usp=drive_link)
 
 ## Setup Instructions
 
@@ -45,4 +45,4 @@ This project was developed as a graduation research project by:
 
 ## Contact
 
-mezniinoor@gmail.com  ||  heithem.benmoussa.71@gmail.com
+mezniinoor@gmail.com  ||  heithem.benmoussa.71@gmail.com || app.safe.scan@gmail.com
